@@ -1,67 +1,241 @@
-# Template de démonstration
+# SSH
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Surveillez vos machines Linux — un serveur maison, un NAS, un Raspberry Pi —
+par SSH, et lancez depuis Gladys les commandes que **vous** avez déclarées :
+redémarrer un service, lancer une sauvegarde, lire une température. Tout reste
+sur votre réseau local : pas de cloud, pas de compte, rien à installer sur les
+machines qu'un serveur SSH, qu'elles ont presque toujours déjà.
+
+Testée contre un vrai serveur OpenSSH (image Docker
+`linuxserver/openssh-server`), avec une clé et avec un mot de passe. Les
+retours sur de vraies machines sont les bienvenus dans les
+[issues](https://github.com/guim31/gladys-ssh/issues).
 
 ## Ce que vous obtenez
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+- **Un appareil par machine** : _Joignable_, _Charge (1 min)_, _Mémoire
+  utilisée_, _Disque utilisé (/)_ et _Durée de fonctionnement_, lus toutes les
+  1 à 30 minutes.
+- **Des capteurs personnalisés** : toute commande dont la sortie est un nombre
+  (avec une unité) ou un texte devient une fonctionnalité de l'appareil : une
+  température de CPU, l'état d'un service, le nombre de mises à jour en
+  attente…
+- **Des commandes déclarées**, lancées par une scène ou un bouton du widget :
+  redémarrer Plex, lancer une sauvegarde, éteindre une machine. **Rien d'autre
+  n'est jamais exécuté** : scènes et widget ne font que nommer une commande de
+  la configuration.
+- **Trois déclencheurs de scène** : _Un hôte est devenu injoignable_, _Un hôte
+  est de nouveau joignable_, _Une commande a échoué_.
+- **Une action de scène**, _Lancer une commande SSH_, dont le code de retour et
+  la sortie servent aux étapes suivantes.
+- **Un widget** de tableau de bord par machine : son état et ses valeurs, et
+  jusqu'à quatre boutons de commande.
+
+## Prérequis
+
+- Gladys Assistant **5.1.0** ou plus récent.
+- Des machines avec un **serveur SSH** (OpenSSH, Dropbear) joignable depuis la
+  machine de Gladys, et un shell POSIX. Les valeurs standard lisent `/proc` et
+  `df` : tout Linux, BusyBox compris (Alpine, OpenWrt, la plupart des NAS). Les
+  autres systèmes peuvent les désactiver et n'utiliser que des capteurs
+  personnalisés.
+- De préférence un **utilisateur dédié à Gladys** sur chaque machine, sans
+  droits d'administration.
 
 ## Configuration
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+### Réglages
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+- **Intervalle de lecture** : fréquence de lecture de chaque machine, une
+  connexion SSH par machine et par cycle (5 minutes par défaut).
+- **Lire charge, mémoire, disque et durée de fonctionnement** : à désactiver
+  pour les machines sans `/proc`, ou pour un utilisateur limité à une seule
+  commande forcée.
+- **Votre propre clé privée** (facultative) et sa **phrase de passe** : laissez
+  vide pour utiliser la clé de l'intégration (recommandé). Sinon, collez une
+  clé privée OpenSSH ou PEM non chiffrée ; les retours à la ligne perdus par le
+  formulaire sont reconstitués. Les anciennes clés PEM chiffrées
+  (`Proc-Type: 4,ENCRYPTED`) ne sont pas prises en charge : convertissez-les
+  avec `ssh-keygen -p -f clé`.
+- **Langue des noms de fonctionnalités** : français par défaut ; anglais,
+  allemand et espagnol aussi. Elle s'applique aux appareils créés ensuite.
 
-## Actions
+### Autoriser l'intégration sur une machine
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+1. Lancez **Afficher la clé publique**. À son premier démarrage, l'intégration
+   a généré sa propre clé Ed25519, gardée dans son volume privé ; la partie
+   privée n'en sort jamais.
+2. Sur la machine, créez un utilisateur dédié et autorisez la clé :
 
-## Scènes
+   ```sh
+   sudo adduser --disabled-password gladys
+   sudo -u gladys mkdir -p ~gladys/.ssh
+   echo 'no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAA… gladys-ssh' \
+     | sudo tee -a ~gladys/.ssh/authorized_keys
+   sudo chmod 700 ~gladys/.ssh && sudo chmod 600 ~gladys/.ssh/authorized_keys
+   sudo chown -R gladys: ~gladys/.ssh
+   ```
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+   Les options `no-…` interdisent tunnels et terminaux à cette clé : elle ne
+   peut que lancer des commandes.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+3. Une commande demande root ? Autorisez **cette commande seulement** avec
+   sudo, par exemple dans `/etc/sudoers.d/gladys` (à éditer avec
+   `sudo visudo -f /etc/sudoers.d/gladys`) :
 
-## Tableau de bord
+   ```
+   gladys ALL=(root) NOPASSWD: /usr/bin/systemctl restart plex
+   ```
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+   Ne donnez jamais `ALL` à l'utilisateur.
+
+### Ajouter un hôte
+
+Lancez **Ajouter ou modifier un hôte** avec un nom, l'adresse IP ou le nom
+d'hôte, le port (22 si vide) et le nom d'utilisateur. Un mot de passe peut
+remplacer la clé : il est visible pendant la saisie, gardé dans le volume de
+l'intégration et jamais réaffiché ; laissez ensuite le champ vide pour le
+conserver.
+
+L'intégration se connecte aussitôt et répond ce qui s'est passé. À la première
+connexion, elle **mémorise la clé d'hôte** de la machine (son empreinte,
+`SHA256:…`) : comparez-la avec `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
+sur la machine. Ensuite, une machine qui présente une autre clé d'hôte est
+**refusée** avant toute authentification. Après une réinstallation, lancez
+**Accepter une nouvelle clé d'hôte**, puis enregistrez de nouveau l'hôte.
+Changer l'adresse ou le port d'un hôte oublie aussi sa clé d'hôte.
+
+Créez ensuite l'appareil dans l'onglet **Découverte**. Enregistrer un hôte sous
+le même nom le met à jour et garde son appareil.
+
+### Déclarer des commandes
+
+Lancez **Ajouter ou modifier une commande** avec l'hôte, un nom, la commande et
+son type :
+
+- **Action** : lancée seulement par une scène ou un bouton du widget. Elle
+  n'est jamais lancée à l'enregistrement.
+- **Capteur : un nombre** : lu à chaque cycle ; le premier nombre de la sortie
+  est retenu (`48250`, `temp=47,8'C` → 47,8). Choisissez son unité :
+  pourcentage, °C, durées, tailles, débit, watts, volts, ou aucune.
+- **Capteur : un texte** : lu à chaque cycle ; la sortie sur une ligne, 250
+  caractères au plus.
+
+Un capteur est essayé une fois à l'enregistrement, et la réponse montre sa
+première valeur. Sa fonctionnalité apparaît sur l'appareil après **Mettre à
+jour** dans l'onglet Découverte. **Bouton dans le widget** ajoute un bouton au
+widget de l'hôte. Le **délai maximal** (10 secondes si vide, 90 au plus) arrête
+une commande trop longue : elle compte alors comme un échec. Les sorties sont
+plafonnées à 64 Ko.
+
+La commande est lancée telle quelle par le shell de l'utilisateur, comme le
+ferait `ssh utilisateur@hôte 'commande'`. **Afficher les hôtes et les
+commandes** liste tout ; **Retirer une commande** et **Retirer un hôte** font
+le ménage.
+
+Exemples de commandes :
+
+| Nom             | Commande                                                             | Type           |
+| --------------- | -------------------------------------------------------------------- | -------------- |
+| CPU             | `cat /sys/class/thermal/thermal_zone0/temp \| awk '{print $1/1000}'` | nombre, °C     |
+| Mises à jour    | `apt list --upgradable 2>/dev/null \| grep -c upgradable`            | nombre         |
+| Plex            | `systemctl is-active plex`                                           | texte          |
+| Redémarrer Plex | `sudo systemctl restart plex`                                        | action, bouton |
+| Sauvegarde      | `/home/gladys/backup.sh`                                             | action         |
+| Éteindre        | `sudo /sbin/poweroff`                                                | action         |
+
+## Appareils
+
+| Fonctionnalité               | Contenu                                                         |
+| ---------------------------- | --------------------------------------------------------------- |
+| Joignable                    | 1 quand la session SSH s'ouvre (adresse, clé d'hôte, connexion) |
+| Charge (1 min)               | charge moyenne sur une minute                                   |
+| Mémoire utilisée             | mémoire occupée, en % (mémoire disponible exclue)               |
+| Disque utilisé (/)           | espace occupé sur le système de fichiers racine, en %           |
+| Durée de fonctionnement      | en jours                                                        |
+| une par capteur personnalisé | son nombre ou son texte                                         |
+
+Une connexion qui échoue est retentée une fois, 5 secondes plus tard, avant
+que la machine passe injoignable : un paquet perdu ne change rien. Les valeurs
+ne sont publiées que quand elles changent, et au moins toutes les 12 heures.
+Tant qu'une machine est injoignable, ses valeurs gardent leur dernière valeur.
+
+## Widget de tableau de bord
+
+Le widget **Hôte SSH** montre une machine (la première si aucune n'est
+choisie) : son état — ou pourquoi elle est injoignable —, charge, mémoire,
+disque, durée de fonctionnement et capteurs personnalisés, avec jusqu'à quatre
+boutons pour les commandes marquées _Bouton dans le widget_. Un bouton lance la
+commande et affiche son résultat (code de retour, première ligne de la sortie)
+dans une notification.
+
+## Déclencheurs de scène
+
+- **Un hôte est devenu injoignable** : la connexion a échoué deux fois de
+  suite. Variables : nom de l'hôte, adresse, raison (`timeout`, `refused`,
+  `unreachable`, `dns`, `auth`, `host_key_changed`, `error`). Filtre : l'hôte.
+- **Un hôte est de nouveau joignable** : variables nom de l'hôte, adresse,
+  minutes d'indisponibilité.
+- **Une commande a échoué** : une commande lancée par une scène ou le widget a
+  renvoyé un code d'erreur, dépassé son délai ou n'a pas pu être lancée ; un
+  capteur le déclenche une fois, jusqu'à ce qu'il remarche. Variables : nom de
+  l'hôte, nom de la commande, code de retour (-1 : non lancée ou arrêtée),
+  sortie. Filtres : l'hôte, le nom de la commande.
+
+Ces événements portent ce qu'un état de fonctionnalité ne peut pas porter : la
+raison, la durée, la sortie. Un seuil sur une valeur (disque au-delà de 90 %…)
+reste une scène classique sur la fonctionnalité de l'appareil.
+
+## Action de scène
+
+**Lancer une commande SSH** : choisissez l'hôte et donnez le nom d'une commande
+déclarée. Sorties : _Réussie_ (1 ou 0), _Code de retour_, _Sortie_ (1000
+caractères au plus), pour une étape « Continuer seulement si » ou un message.
+Une commande en échec n'arrête pas la scène : testez _Réussie_. Un hôte ou une
+commande inconnus, si.
+
+## Exemples de scènes
+
+- **Alerte quand le NAS tombe** : déclencheur _Un hôte est devenu injoignable_
+  (NAS) → envoyer un message « NAS injoignable : {{triggerEvent.data.reason}} ».
+- **Relancer un service bloqué** : toutes les 15 minutes → _Lancer une commande
+  SSH_ « Vérifier Plex » (`systemctl is-active plex`, qui échoue quand le
+  service est arrêté) → continuer seulement si _Réussie_ vaut 0 → _Lancer une
+  commande SSH_ « Redémarrer Plex » → envoyer sa sortie.
+- **Sauvegarde de nuit** : à 3 h → _Lancer une commande SSH_ « Sauvegarde » →
+  envoyer le code de retour ; déclencheur _Une commande a échoué_ (Sauvegarde)
+  pour une alerte.
+- **Tout éteindre en partant** : _Lancer une commande SSH_ « Éteindre » sur le
+  PC multimédia quand la maison est vide.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« authentification refusée »** : la clé publique n'est pas dans
+  `~/.ssh/authorized_keys` de cet utilisateur, ou les droits sont trop ouverts
+  (`chmod 700 ~/.ssh`, `chmod 600 ~/.ssh/authorized_keys`, propriété de
+  l'utilisateur). Le journal du serveur (`journalctl -u ssh`) dit pourquoi.
+- **« la clé d'hôte a changé »** : la machine a été réinstallée, ou une autre
+  machine a pris son adresse. Vérifiez, puis **Accepter une nouvelle clé
+  d'hôte**.
+- **« pas de réponse »** : adresse, port, pare-feu. Les noms mDNS (`.local`) ne
+  sont pas résolus par l'intégration : utilisez l'adresse IP.
+- **Les valeurs standard restent vides** : la machine n'a ni `/proc` ni `df`,
+  ou la clé est limitée à une commande forcée (`command=` dans
+  `authorized_keys`) : désactivez-les et utilisez des capteurs personnalisés.
+- **Un capteur nombre reste vide** : sa commande doit se terminer avec 0 et
+  afficher un nombre. Lancez-la à la main avec `ssh gladys@hôte 'commande'`.
+- Logs : dans Gladys, les logs du conteneur de l'intégration ;
+  `LOG_LEVEL=debug` montre chaque cycle.
+
+## Limites
+
+- Linux et autres systèmes POSIX ; pas de valeurs propres à Windows (les
+  capteurs personnalisés marchent si l'OpenSSH de Windows lance un shell
+  POSIX).
+- Un mot de passe par hôte, visible pendant la saisie : préférez la clé.
+- 20 hôtes, 15 commandes par hôte, 4 boutons par widget.
+- Un dépassement de délai envoie un signal KILL (OpenSSH 7.9 ou plus récent)
+  et ferme le canal ; un serveur plus ancien peut laisser la commande finir
+  seule.
+- Aucun paramètre de scène ne peut être passé à une commande, volontairement.
+- Sans lien avec OpenSSH ni le projet OpenBSD.
