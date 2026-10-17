@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-17
+
 ### Added
 
 - One device per Linux machine, read over SSH every 1 to 30 minutes:
@@ -29,3 +31,6 @@ the notes of the version's GitHub Release.
 - Configuration actions to add hosts and commands, show the public key, list
   everything, and accept a new host key after a reinstallation.
 - Texts and documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-ssh/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-ssh/releases/tag/v1.0.0
