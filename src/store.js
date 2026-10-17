@@ -28,8 +28,22 @@ export class Store {
       const data = JSON.parse(await readFile(this.path, 'utf8'));
       return data && typeof data === 'object' ? data : {};
     } catch (err) {
-      if (err.code !== 'ENOENT') {
-        logger.warn(`Cannot read ${this.path}: ${err.message}`);
+      if (err.code === 'ENOENT') {
+        return {};
+      }
+      // Never overwrite a file that could not be read: the hosts, passwords
+      // and host keys it holds would be lost, and the keys learned again
+      // without warning. A corrupt file is set aside; an unreadable one
+      // blocks the writes.
+      if (err instanceof SyntaxError) {
+        const aside = `${this.path}.bad-${Date.now()}`;
+        await rename(this.path, aside).catch(() => {
+          this.blocked = true;
+        });
+        logger.error(`${this.path} is corrupt, set aside as ${aside}`);
+      } else {
+        this.blocked = true;
+        logger.error(`Cannot read ${this.path}: ${err.message}; nothing will be written`);
       }
       return {};
     }
@@ -38,6 +52,9 @@ export class Store {
   // Writes are coalesced and atomic (temporary file + rename): a crash never
   // leaves half a JSON file behind.
   save(data) {
+    if (this.blocked) {
+      return Promise.resolve();
+    }
     this.latest = data;
     if (!this.pending) {
       // Chained after the write in progress, if any: one writer at a time.

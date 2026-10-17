@@ -271,3 +271,10 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Budget du widget relu dans le schéma du store : **4 boutons au plus** (pas 6), 1 `status` de 10 lignes.
 - Tests réseau : `test/ssh.test.js` monte un serveur ssh2 **dans le processus, sur 127.0.0.1** (boucle
   locale) ; aucun test ne résout de nom ni ne sort de la machine.
+- **Connexion coupée en pleine session** (relu le 17/10) : ssh2 émet `close` du client avant de fermer
+  les canaux, et un `exec()` après la coupure lève « Not connected » de façon synchrone : sans garde, rejet
+  non capté et **processus arrêté**. `runSession` résout désormais la commande en cours et les suivantes
+  en `disconnected` (une commande `reboot` n'est pas un échec), avec une échéance globale de session et
+  des keepalives (5 s × 3) contre une connexion TCP à moitié morte.
+- Des noms différents qui donnent le même slug (« NAS 2 » / « NAS 2! ») sont refusés, jamais écrasés.
+  Un `state.json` illisible n'est jamais réécrit (mis de côté s'il est corrompu).

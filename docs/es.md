@@ -114,7 +114,8 @@ y su tipo:
 - **Acción**: solo se ejecuta desde una escena o un botón del widget. Nunca se
   ejecuta al guardarla.
 - **Sensor: un número**: se lee en cada ciclo; se toma el primer número de la
-  salida (`48250`, `temp=47,8'C` → 47,8). Elija su unidad: porcentaje, °C,
+  salida (`48250`, `temp=47,8'C` → 47,8): filtre una salida extensa con `awk`
+  o `cut` (`temp1: +45.0°C` daría 1). Elija su unidad: porcentaje, °C,
   duraciones, tamaños, velocidad, vatios, voltios o ninguna.
 - **Sensor: un texto**: se lee en cada ciclo; la salida en una línea, 250
   caracteres como máximo.
@@ -164,12 +165,13 @@ ninguna): su estado — o por qué está inaccesible —, carga, memoria, disco,
 tiempo encendido y sensores personalizados, con hasta cuatro botones para los
 comandos marcados _Botón en el widget_. Un botón ejecuta el comando y muestra
 su resultado (código de salida, primera línea de la salida) en una
-notificación.
+notificación. Una acción pide confirmación antes (Gladys 5.2.0 o
+posterior).
 
 ## Activadores de escena
 
-- **Un equipo ha dejado de estar accesible**: la conexión ha fallado dos veces
-  seguidas. Variables: nombre del equipo, dirección, motivo (`timeout`,
+- **Un equipo ha dejado de estar accesible**: sin respuesta o rechazada dos
+  veces seguidas, o enseguida si se rechaza el acceso o cambia la clave. Variables: nombre del equipo, dirección, motivo (`timeout`,
   `refused`, `unreachable`, `dns`, `auth`, `host_key_changed`, `error`).
   Filtro: el equipo.
 - **Un equipo vuelve a estar accesible**: variables nombre del equipo,

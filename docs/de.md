@@ -116,7 +116,8 @@ und seiner Art:
 - **Aktion**: nur aus einer Szene oder über eine Widget-Schaltfläche
   gestartet. Beim Speichern wird sie nie ausgeführt.
 - **Sensor: eine Zahl**: bei jedem Zyklus gelesen; die erste Zahl der Ausgabe
-  zählt (`48250`, `temp=47,8'C` → 47,8). Wähle ihre Einheit: Prozent, °C,
+  zählt (`48250`, `temp=47,8'C` → 47,8): Filtere eine ausführliche Ausgabe
+  mit `awk` oder `cut` (`temp1: +45.0°C` ergäbe 1). Wähle ihre Einheit: Prozent, °C,
   Dauern, Größen, Datenrate, Watt, Volt oder keine.
 - **Sensor: ein Text**: bei jedem Zyklus gelesen; die Ausgabe in einer Zeile,
   höchstens 250 Zeichen.
@@ -167,12 +168,14 @@ ist): seinen Zustand — oder warum er nicht erreichbar ist —, Last, Speicher,
 Festplatte, Betriebszeit und eigene Sensoren, mit bis zu vier Schaltflächen
 für die Befehle mit _Schaltfläche im Widget_. Eine Schaltfläche startet den
 Befehl und zeigt sein Ergebnis (Rückgabewert, erste Zeile der Ausgabe) in
-einer Benachrichtigung.
+einer Benachrichtigung. Eine Aktion fragt vorher nach (Gladys 5.2.0 oder
+neuer).
 
 ## Szenen-Auslöser
 
-- **Ein Host ist nicht mehr erreichbar**: Die Verbindung ist zweimal
-  hintereinander gescheitert. Variablen: Name des Hosts, Adresse, Grund
+- **Ein Host ist nicht mehr erreichbar**: zweimal hintereinander keine
+  Antwort oder abgelehnt, oder sofort bei abgelehnter Anmeldung oder
+  geändertem Host-Schlüssel. Variablen: Name des Hosts, Adresse, Grund
   (`timeout`, `refused`, `unreachable`, `dns`, `auth`, `host_key_changed`,
   `error`). Filter: der Host.
 - **Ein Host ist wieder erreichbar**: Variablen Name des Hosts, Adresse,

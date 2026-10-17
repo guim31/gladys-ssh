@@ -105,7 +105,10 @@ function statusItems(monitor, host, language) {
       items.push({
         label: cut(command.name, MAX_LABEL),
         value: cut(`${sensor.value}${unit}`, MAX_LABEL),
-        ...(sensor.ok === false ? { color: WIDGET_COLORS.WARNING } : {}),
+        // A failing sensor, or an offline host: the value shown is the last one.
+        ...(sensor.ok === false || status.reachable === false
+          ? { color: WIDGET_COLORS.WARNING }
+          : {}),
       });
     }
   }
@@ -144,6 +147,9 @@ export const WIDGETS = {
             action: {
               key: `${BUTTON_PREFIX}${index + 1}`,
               params: { host: host.id, command: command.id },
+              // An action asks before running (Gladys 5.2.0+; older cores
+              // drop the field and run it on the tap).
+              ...(command.kind === 'action' ? { confirm: true } : {}),
             },
           });
         });
@@ -172,6 +178,9 @@ export const WIDGETS = {
             ),
           ]),
         );
+      }
+      if (result.disconnected) {
+        return say(RUNS, 'disconnected', { name: command.name });
       }
       const head = result.timedOut
         ? say(RUNS, 'timedOut', { name: command.name, seconds: command.timeout })

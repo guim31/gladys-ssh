@@ -64,8 +64,10 @@ function classify(err, state) {
     case 'EHOSTDOWN':
       return new SshError('unreachable', 'Host unreachable');
     case 'ENOTFOUND':
-    case 'EAI_AGAIN':
       return new SshError('dns', 'Unknown host name');
+    case 'EAI_AGAIN':
+      // A resolver hiccup, not an unknown name: tried again like the network.
+      return new SshError('dns', 'Name resolution failed', { transient: true });
     default:
       return new SshError('error', err?.message || 'SSH error');
   }
@@ -84,9 +86,9 @@ function append(buffer, chunk, max) {
 function execOne(client, { command, timeoutMs, maxBytes = MAX_OUTPUT_BYTES }) {
   return new Promise((resolve) => {
     const started = Date.now();
-    client.exec(command, (err, stream) => {
+    const onOpen = (err, stream) => {
       if (err) {
-        resolve({ code: null, stdout: '', stderr: err.message, timedOut: false, error: true });
+        resolve({ code: null, stdout: '', stderr: err.message, timedOut: false });
         return;
       }
       let stdout = Buffer.alloc(0);
@@ -132,7 +134,13 @@ function execOne(client, { command, timeoutMs, maxBytes = MAX_OUTPUT_BYTES }) {
         truncated ||= next.truncated;
       });
       stream.on('close', finish);
-    });
+    };
+    try {
+      client.exec(command, onOpen);
+    } catch (err) {
+      // The connection dropped between two commands: ssh2 throws "Not connected".
+      onOpen(err);
+    }
   });
 }
 
@@ -152,24 +160,54 @@ export function runSession(target, commands, options) {
   return new Promise((resolve, reject) => {
     const client = new Client();
     let settled = false;
-    const fail = (err) => {
+    let ready = false;
+    let closed = false;
+    const settle = (fn, value) => {
       if (settled) {
         return;
       }
       settled = true;
+      clearTimeout(deadline);
       client.end();
-      reject(err instanceof SshError ? err : classify(err, state));
+      fn(value);
     };
-    client.on('error', fail);
-    client.on('close', () => fail(new SshError('error', 'Connection closed')));
+    const fail = (err) => settle(reject, err instanceof SshError ? err : classify(err, state));
+    // A half-dead TCP connection after the login would otherwise hold the
+    // session until the kernel gives up (minutes): one deadline for it all.
+    const budget =
+      connectTimeoutMs + commands.reduce((sum, entry) => sum + entry.timeoutMs + 2000, 0) + 5000;
+    const deadline = setTimeout(() => fail(new SshError('timeout', 'Session deadline')), budget);
+    deadline.unref?.();
+    client.on('error', (err) => {
+      if (!ready) {
+        fail(err);
+      }
+    });
+    client.on('close', () => {
+      closed = true;
+      // Before the login, a close is a failure. After it, the command in
+      // progress resolves as disconnected (a reboot, sshd restarted) and the
+      // remaining ones are not run.
+      if (!ready) {
+        fail(new SshError('error', 'Connection closed'));
+      }
+    });
     client.on('ready', async () => {
+      ready = true;
       const results = [];
       for (const entry of commands) {
-        results.push(await execOne(client, entry));
+        if (closed || settled) {
+          results.push({ code: null, stdout: '', stderr: '', timedOut: false, disconnected: true });
+          continue;
+        }
+        const result = await execOne(client, entry);
+        results.push(
+          closed && result.code === null && !result.timedOut
+            ? { ...result, disconnected: true }
+            : result,
+        );
       }
-      settled = true;
-      client.end();
-      resolve({ fingerprint: state.received, results });
+      settle(resolve, { fingerprint: state.received, results });
     });
     const auths = ['publickey', ...(target.password ? ['password'] : [])];
     try {
@@ -182,7 +220,8 @@ export function runSession(target, commands, options) {
         password: target.password || undefined,
         authHandler: auths,
         readyTimeout: connectTimeoutMs,
-        keepaliveInterval: 0,
+        keepaliveInterval: 5000,
+        keepaliveCountMax: 3,
         hostVerifier: (blob) => {
           state.received = fingerprint(blob);
           if (knownFingerprint && knownFingerprint !== state.received) {

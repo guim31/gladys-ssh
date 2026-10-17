@@ -108,7 +108,8 @@ kind:
 - **Action**: run from a scene or a widget button only. It is never run when
   saved.
 - **Sensor: a number**: read at every cycle; the first number of the output is
-  kept (`48250`, `temp=47,8'C` → 47.8). Choose its unit: percent, °C,
+  kept (`48250`, `temp=47,8'C` → 47.8): filter a verbose output with `awk` or
+  `cut` (`temp1: +45.0°C` would read 1). Choose its unit: percent, °C,
   durations, sizes, rate, watts, volts, or none.
 - **Sensor: a text**: read at every cycle; the output on one line, 250
   characters at most.
@@ -156,11 +157,13 @@ The **SSH host** widget shows one machine (the first one if none is chosen):
 its state — or why it is unreachable —, load, memory, disk, uptime and custom
 sensors, with up to four buttons for the commands marked _Button in the
 widget_. A button runs the command and shows its result (exit code, first
-line of the output) in a notification.
+line of the output) in a notification. An action asks for confirmation
+first (Gladys 5.2.0 or later).
 
 ## Scene triggers
 
-- **A host became unreachable**: the connection failed twice in a row.
+- **A host became unreachable**: no answer or refused twice in a row, or at
+  once for a refused login or a changed host key.
   Variables: host name, address, reason (`timeout`, `refused`, `unreachable`,
   `dns`, `auth`, `host_key_changed`, `error`). Filter: the host.
 - **A host is reachable again**: variables host name, address, minutes

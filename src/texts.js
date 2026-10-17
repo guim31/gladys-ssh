@@ -124,6 +124,8 @@ export const ERRORS = {
     unknownCommand: ({ value, host }) => `${host} has no command named "${value}".`,
     keyInvalid: 'The private key of the configuration is unreadable.',
     keyPassphrase: 'The passphrase of the private key is missing or wrong.',
+    nameTaken: ({ value }) =>
+      `This name is too close to "${value}", already saved: choose another one, or use exactly "${value}" to update it.`,
   },
   fr: {
     name: "Donnez un nom à l'hôte.",
@@ -143,6 +145,8 @@ export const ERRORS = {
     unknownCommand: ({ value, host }) => `${host} n'a pas de commande « ${value} ».`,
     keyInvalid: 'La clé privée de la configuration est illisible.',
     keyPassphrase: 'La phrase de passe de la clé privée manque ou est fausse.',
+    nameTaken: ({ value }) =>
+      `Ce nom est trop proche de « ${value} », déjà enregistré : choisissez-en un autre, ou reprenez exactement « ${value} » pour le modifier.`,
   },
   de: {
     name: 'Gib dem Host einen Namen.',
@@ -162,6 +166,8 @@ export const ERRORS = {
     unknownCommand: ({ value, host }) => `${host} hat keinen Befehl „${value}“.`,
     keyInvalid: 'Der private Schlüssel der Konfiguration ist unlesbar.',
     keyPassphrase: 'Die Passphrase des privaten Schlüssels fehlt oder ist falsch.',
+    nameTaken: ({ value }) =>
+      `Dieser Name ist zu nah an „${value}“, das schon gespeichert ist: Wähle einen anderen oder nimm genau „${value}“, um es zu ändern.`,
   },
   es: {
     name: 'Dé un nombre al equipo.',
@@ -180,6 +186,8 @@ export const ERRORS = {
     unknownCommand: ({ value, host }) => `${host} no tiene ningún comando «${value}».`,
     keyInvalid: 'La clave privada de la configuración es ilegible.',
     keyPassphrase: 'Falta la frase de contraseña de la clave privada o es incorrecta.',
+    nameTaken: ({ value }) =>
+      `Este nombre es demasiado parecido a «${value}», ya guardado: elija otro, o use exactamente «${value}» para modificarlo.`,
   },
 };
 
@@ -330,6 +338,7 @@ export const RUNS = {
     failed: ({ name, code }) => `${name}: failed (exit code ${code})`,
     timedOut: ({ name, seconds }) => `${name}: stopped after ${seconds} s`,
     unreachable: ({ name, reason }) => `${name} not run: ${reason}`,
+    disconnected: ({ name }) => `${name}: sent, then the connection closed (normal for a reboot)`,
     gone: 'This command is no longer in the configuration.',
   },
   fr: {
@@ -337,6 +346,8 @@ export const RUNS = {
     failed: ({ name, code }) => `${name} : échec (code de retour ${code})`,
     timedOut: ({ name, seconds }) => `${name} : arrêté après ${seconds} s`,
     unreachable: ({ name, reason }) => `${name} non lancé : ${reason}`,
+    disconnected: ({ name }) =>
+      `${name} : envoyée, puis la connexion s'est fermée (normal pour un redémarrage)`,
     gone: "Cette commande n'est plus dans la configuration.",
   },
   de: {
@@ -344,6 +355,8 @@ export const RUNS = {
     failed: ({ name, code }) => `${name}: fehlgeschlagen (Rückgabewert ${code})`,
     timedOut: ({ name, seconds }) => `${name}: nach ${seconds} s gestoppt`,
     unreachable: ({ name, reason }) => `${name} nicht ausgeführt: ${reason}`,
+    disconnected: ({ name }) =>
+      `${name}: gesendet, dann wurde die Verbindung geschlossen (normal bei einem Neustart)`,
     gone: 'Dieser Befehl ist nicht mehr in der Konfiguration.',
   },
   es: {
@@ -351,6 +364,8 @@ export const RUNS = {
     failed: ({ name, code }) => `${name}: error (código de salida ${code})`,
     timedOut: ({ name, seconds }) => `${name}: detenido tras ${seconds} s`,
     unreachable: ({ name, reason }) => `${name} no ejecutado: ${reason}`,
+    disconnected: ({ name }) =>
+      `${name}: enviado y, después, la conexión se cerró (normal en un reinicio)`,
     gone: 'Este comando ya no está en la configuración.',
   },
 };

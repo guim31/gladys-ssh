@@ -116,7 +116,8 @@ son type :
 - **Action** : lancée seulement par une scène ou un bouton du widget. Elle
   n'est jamais lancée à l'enregistrement.
 - **Capteur : un nombre** : lu à chaque cycle ; le premier nombre de la sortie
-  est retenu (`48250`, `temp=47,8'C` → 47,8). Choisissez son unité :
+  est retenu (`48250`, `temp=47,8'C` → 47,8) : filtrez une sortie bavarde avec
+  `awk` ou `cut` (`temp1: +45.0°C` donnerait 1). Choisissez son unité :
   pourcentage, °C, durées, tailles, débit, watts, volts, ou aucune.
 - **Capteur : un texte** : lu à chaque cycle ; la sortie sur une ligne, 250
   caractères au plus.
@@ -167,12 +168,13 @@ choisie) : son état — ou pourquoi elle est injoignable —, charge, mémoire,
 disque, durée de fonctionnement et capteurs personnalisés, avec jusqu'à quatre
 boutons pour les commandes marquées _Bouton dans le widget_. Un bouton lance la
 commande et affiche son résultat (code de retour, première ligne de la sortie)
-dans une notification.
+dans une notification. Une action demande d'abord confirmation (Gladys 5.2.0
+ou plus récent).
 
 ## Déclencheurs de scène
 
-- **Un hôte est devenu injoignable** : la connexion a échoué deux fois de
-  suite. Variables : nom de l'hôte, adresse, raison (`timeout`, `refused`,
+- **Un hôte est devenu injoignable** : pas de réponse ou refus deux fois de
+  suite, ou aussitôt pour une connexion refusée ou une clé d'hôte changée. Variables : nom de l'hôte, adresse, raison (`timeout`, `refused`,
   `unreachable`, `dns`, `auth`, `host_key_changed`, `error`). Filtre : l'hôte.
 - **Un hôte est de nouveau joignable** : variables nom de l'hôte, adresse,
   minutes d'indisponibilité.

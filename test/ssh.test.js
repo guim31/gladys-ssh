@@ -199,3 +199,63 @@ test('a closed port is "refused"', async () => {
     (err) => err.code === 'refused',
   );
 });
+
+test('a connection closed during a command (a reboot) resolves, never crashes', async () => {
+  const dropper = new Server({ hostKeys: [hostKey.private] }, (conn) => {
+    conn.on('authentication', (ctx) => ctx.accept());
+    conn.on('ready', () => {
+      conn.on('session', (accept) => {
+        accept().on('exec', (acceptExec, _reject, info) => {
+          const stream = acceptExec();
+          if (info.command === 'reboot') {
+            setTimeout(() => conn.end(), 50);
+          } else {
+            stream.write('ok\n');
+            stream.exit(0);
+            stream.end();
+          }
+        });
+      });
+    });
+    conn.on('error', () => {});
+  });
+  await new Promise((resolve) => dropper.listen(0, '127.0.0.1', resolve));
+  const result = await runSession(
+    target(dropper.address().port),
+    [
+      { command: 'echo ok', timeoutMs: 5000 },
+      { command: 'reboot', timeoutMs: 5000 },
+      { command: 'echo ok', timeoutMs: 5000 },
+    ],
+    { key: client, knownFingerprint: HOST_FP },
+  );
+  dropper.close();
+  assert.deepEqual(
+    result.results.map((r) => [r.code, Boolean(r.disconnected)]),
+    [
+      [0, false],
+      [null, true],
+      [null, true],
+    ],
+  );
+});
+
+test('a server that never answers the channel hits the session deadline', async () => {
+  const mute = new Server({ hostKeys: [hostKey.private] }, (conn) => {
+    conn.on('authentication', (ctx) => ctx.accept());
+    conn.on('ready', () => conn.on('session', () => {}));
+    conn.on('error', () => {});
+  });
+  await new Promise((resolve) => mute.listen(0, '127.0.0.1', resolve));
+  const started = Date.now();
+  await assert.rejects(
+    runSession(target(mute.address().port), [{ command: 'x', timeoutMs: 100 }], {
+      key: client,
+      knownFingerprint: HOST_FP,
+      connectTimeoutMs: 1000,
+    }),
+    (err) => err.code === 'timeout',
+  );
+  assert.ok(Date.now() - started < 10_000);
+  mute.close();
+});

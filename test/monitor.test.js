@@ -368,3 +368,77 @@ test('a device created later gets every state again, and the widget a refresh', 
   assert.ok(world.fake.states.length >= before + 5, 'all states published again');
   assert.ok(world.fake.widgetRefreshes.length >= 1);
 });
+
+test('two names with the same id are refused, never overwritten', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await action(world, 'add_host', HOME_SERVER);
+  const ack = await action(world, 'add_host', { ...HOME_SERVER, name: 'Home server!' });
+  assert.match(message(ack), /too close to "Home server"/);
+  const same = await action(world, 'add_host', { ...HOME_SERVER, name: 'HOME SERVER' });
+  assert.match(message(same), /saved/);
+  await action(world, 'add_command', {
+    host: 'Home server',
+    name: 'Reboot',
+    command: 'x',
+    kind: 'action',
+  });
+  const cmd = await action(world, 'add_command', {
+    host: 'Home server',
+    name: 'reboot!',
+    command: 'y',
+    kind: 'action',
+  });
+  assert.match(message(cmd), /too close to "Reboot"/);
+  assert.equal(world.monitor.hosts.get('home-server').commands[0].command, 'x');
+});
+
+test('a reboot command closing the connection is no failure', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const device = await homeServer(world);
+  await action(world, 'add_command', {
+    host: 'Home server',
+    name: 'Reboot',
+    command: 'sudo reboot',
+    kind: 'action',
+  });
+  world.network.machines['192.0.2.10'].commands['sudo reboot'] = { code: null, disconnected: true };
+  const ack = await world.fake.sceneAction('run_command', {
+    device: device.external_id,
+    command: 'Reboot',
+  });
+  assert.deepEqual(ack.data.outputs, { success: 0, exit_code: -1, output: 'connection closed' });
+  assert.deepEqual(events(world, TRIGGERS.COMMAND_FAILED), []);
+});
+
+test('a sensor run from the widget publishes its new value', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await action(world, 'add_host', HOME_SERVER);
+  await action(world, 'add_command', {
+    host: 'Home server',
+    name: 'Plex',
+    command: 'systemctl is-active plex',
+    kind: 'text',
+    button: true,
+  });
+  const device = await create(world, 'Home server');
+  world.network.machines['192.0.2.10'].commands['systemctl is-active plex'] = {
+    code: 0,
+    stdout: 'reloading',
+  };
+  await world.fake.widgetAction('host', 'run_1', { host: 'home-server', command: 'plex' });
+  assert.equal(last(world, device, 'cmd-plex'), 'reloading');
+});
+
+test('a corrupt state file is set aside, never overwritten', async (t) => {
+  const { mkdtempSync, writeFileSync, readdirSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dataDir = mkdtempSync(join(tmpdir(), 'gladys-ssh-bad-'));
+  writeFileSync(join(dataDir, 'state.json'), '{"hosts": [');
+  const world = await createWorld({ dataDir });
+  t.after(() => world.app.stop());
+  assert.ok(readdirSync(dataDir).some((name) => name.startsWith('state.json.bad-')));
+});

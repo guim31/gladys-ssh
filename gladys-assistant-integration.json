@@ -822,10 +822,10 @@
         "es": "Un equipo ha dejado de estar accesible"
       },
       "description": {
-        "en": "The SSH connection failed twice in a row (no answer, refused, authentication, host key changed).",
-        "fr": "La connexion SSH a échoué deux fois de suite (pas de réponse, refus, authentification, clé d'hôte changée).",
-        "de": "Die SSH-Verbindung ist zweimal hintereinander gescheitert (keine Antwort, abgelehnt, Anmeldung, Host-Schlüssel geändert).",
-        "es": "La conexión SSH ha fallado dos veces seguidas (sin respuesta, rechazo, autenticación, clave cambiada)."
+        "en": "The SSH connection failed: no answer or refused twice in a row, or at once for a refused login or a changed host key.",
+        "fr": "La connexion SSH a échoué : pas de réponse ou refus deux fois de suite, ou aussitôt pour une connexion refusée ou une clé d'hôte changée.",
+        "de": "Die SSH-Verbindung ist gescheitert: zweimal hintereinander keine Antwort oder abgelehnt, oder sofort bei abgelehnter Anmeldung oder geändertem Host-Schlüssel.",
+        "es": "La conexión SSH ha fallado: sin respuesta o rechazada dos veces seguidas, o enseguida si se rechaza el acceso o cambia la clave del equipo."
       },
       "fields": [
         {

@@ -132,7 +132,7 @@ export class Monitor {
         this.hosts.set(entry.id, { ...entry, commands: entry.commands ?? [] });
         this.status.set(entry.id, {
           reachable: entry.lastReachable ?? null,
-          reason: null,
+          reason: entry.lastReason ?? null,
           downSince: entry.downSince ?? null,
           metrics: {},
           sensors: new Map((entry.failedSensors ?? []).map((id) => [id, { ok: false }])),
@@ -226,6 +226,7 @@ export class Monitor {
         return {
           ...host,
           lastReachable: status?.reachable ?? null,
+          lastReason: status?.reason ?? null,
           downSince: status?.downSince ?? null,
           failedSensors: [...(status?.sensors ?? new Map())]
             .filter(([, sensor]) => sensor.ok === false)
@@ -400,7 +401,7 @@ export class Monitor {
     try {
       return await this.connect(host, commands);
     } catch (err) {
-      if (!TRANSIENT.has(err.code) || this.stopped) {
+      if (!(TRANSIENT.has(err.code) || err.transient) || this.stopped) {
         throw err;
       }
       logger.debug(`${host.name}: ${err.code}, trying again`);
@@ -438,6 +439,10 @@ export class Monitor {
       ({ results } = await this.connectWithRetry(host, commands));
     } catch (err) {
       await this.markUnreachable(host, err);
+      return;
+    }
+    if (results.some((result) => result.disconnected)) {
+      await this.markUnreachable(host, { code: 'error' });
       return;
     }
     const wasDown = status.reachable === false;
@@ -489,6 +494,7 @@ export class Monitor {
     const status = this.statusOf(host);
     const reason = err.code ?? 'error';
     const wasUp = status.reachable !== false;
+    const previousReason = status.reason;
     status.reachable = false;
     status.reason = reason;
     status.checkedAt = this.now();
@@ -505,7 +511,7 @@ export class Monitor {
       logger.debug(`${host.name} still unreachable: ${reason}`);
     }
     await this.publishStates([host]);
-    if (wasUp) {
+    if (wasUp || previousReason !== reason) {
       this.save();
     }
   }
@@ -551,6 +557,23 @@ export class Monitor {
     }
   }
 
+  /** Records the value of a sensor read outside a cycle, and publishes it. */
+  async recordSensor(host, command, result) {
+    const value =
+      result.code !== 0
+        ? null
+        : command.kind === 'text'
+          ? parseText(result.stdout)
+          : parseNumber(result.stdout);
+    if (value !== null) {
+      this.statusOf(host).sensors.set(command.id, { ok: true, value });
+      if (this.createdHosts().some((entry) => entry.id === host.id)) {
+        await this.publishStates([host]);
+      }
+    }
+    return value;
+  }
+
   /**
    * Runs one declared command (scene, widget). Never throws for a failure of
    * the command or the host: the result says it, and `command_failed` fires.
@@ -572,7 +595,22 @@ export class Monitor {
       await this.fireCommandFailed(host, command, { code: null, stdout: '', stderr: text });
       return { success: false, code: -1, output: text, timedOut: false, reason };
     }
+    if (result.disconnected) {
+      // A reboot or an sshd restart closes the connection: the command was
+      // sent, its result cannot be known. Not reported as a failure.
+      logger.info(`"${command.name}" on ${host.name}: connection closed during the command`);
+      return {
+        success: false,
+        code: -1,
+        output: 'connection closed',
+        timedOut: false,
+        disconnected: true,
+      };
+    }
     const success = result.code === 0 && !result.timedOut;
+    if (success && command.kind !== 'action') {
+      await this.recordSensor(host, command, result);
+    }
     if (!success) {
       logger.info(
         `"${command.name}" failed on ${host.name}: ${result.timedOut ? 'timeout' : `exit ${result.code}`}`,
@@ -592,6 +630,10 @@ export class Monitor {
   async addHost(fields) {
     const parsed = parseHostFields(fields);
     const existing = this.hosts.get(parsed.id);
+    if (existing && existing.name.toLowerCase() !== parsed.name.toLowerCase()) {
+      // Two names, one id ("NAS 2!" and "NAS 2"): refused, never overwritten.
+      throw new UserError('nameTaken', { value: existing.name });
+    }
     if (!existing && this.hosts.size >= MAX_HOSTS) {
       throw new UserError('tooManyHosts', { max: MAX_HOSTS });
     }
@@ -664,6 +706,9 @@ export class Monitor {
     const host = this.requireHost(fields.host);
     const command = parseCommandFields(fields);
     const index = host.commands.findIndex((entry) => entry.id === command.id);
+    if (index !== -1 && host.commands[index].name.toLowerCase() !== command.name.toLowerCase()) {
+      throw new UserError('nameTaken', { value: host.commands[index].name });
+    }
     if (index === -1 && host.commands.length >= MAX_COMMANDS) {
       throw new UserError('tooManyCommands', { max: MAX_COMMANDS });
     }
@@ -708,12 +753,7 @@ export class Monitor {
     } catch (err) {
       return sayReason(err.code ?? 'error');
     }
-    const value =
-      result.code !== 0
-        ? null
-        : command.kind === 'text'
-          ? parseText(result.stdout)
-          : parseNumber(result.stdout);
+    const value = await this.recordSensor(host, command, result);
     if (value === null) {
       const output = cut(
         outputOf(result) || (result.timedOut ? 'timeout' : `exit ${result.code}`),
@@ -721,7 +761,6 @@ export class Monitor {
       );
       return say(REPORTS, 'triedFailed', { output });
     }
-    this.statusOf(host).sensors.set(command.id, { ok: true, value });
     return say(REPORTS, 'tried', { value: `${value}${command.unit ? ` (${command.unit})` : ''}` });
   }
 
