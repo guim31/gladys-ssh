@@ -28,8 +28,22 @@ Gladys before reporting a problem.
 
 ## Scope
 
-In scope: the code of this repository and the Docker image it publishes.
+In scope: the code of this repository and the Docker image it publishes, in
+particular:
+
+- the command boundary: only the commands declared in the configuration may
+  run, and nothing a scene or a widget request sends is added to them;
+- the host key check (trust on first use, refusal of a changed key before
+  authentication);
+- the secrets kept in `/data`, the integration's private volume: its own SSH
+  private key (`id_ed25519`, mode 600), and `state.json` (mode 600) with the
+  hosts, their commands, the remembered host key fingerprints and the optional
+  per-host passwords. The private key, passphrase and passwords must never
+  appear in the logs, the action results or the device parameters;
+- the SSH connections the integration opens to the machines you added, on
+  your local network. It opens no port and talks to no other service.
 
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+the SSH servers of your machines, and what the commands you declared do once
+run: grant the SSH user only what those commands need.

@@ -1,61 +1,227 @@
-# Demo Devices Template
+# SSH
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Watch your Linux machines — a home server, a NAS, a Raspberry Pi — over SSH,
+and run from Gladys the commands **you** declared: restart a service, start a
+backup, read a temperature. Everything stays on your local network: no cloud,
+no account, nothing to install on the machines but an SSH server, which they
+almost always already have.
+
+Tested against a real OpenSSH server (Docker image
+`linuxserver/openssh-server`), with a key and with a password. Feedback from
+real machines is welcome in the
+[issues](https://github.com/guim31/gladys-ssh/issues).
 
 ## What you get
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+- **One device per machine**: _Reachable_, _Load (1 min)_, _Memory used_,
+  _Disk used (/)_ and _Uptime_, read every 1 to 30 minutes.
+- **Custom sensors**: any command whose output is a number (with a unit) or a
+  text becomes a feature of the device: a CPU temperature, the state of a
+  service, the number of updates waiting…
+- **Declared commands**, run from a scene or a widget button: restart Plex,
+  start a backup, shut a machine down. **Nothing else ever runs**: scenes and
+  the widget only name a command of the configuration.
+- **Three scene triggers**: _A host became unreachable_, _A host is reachable
+  again_, _A command failed_.
+- **A scene action**, _Run an SSH command_, whose exit code and output feed the
+  next steps.
+- **A dashboard widget** per machine: its state and figures, and up to four
+  command buttons.
+
+## Requirements
+
+- Gladys Assistant **5.1.0** or later.
+- Machines running an **SSH server** (OpenSSH, Dropbear) reachable from the
+  Gladys machine, with a POSIX shell. The standard figures read `/proc` and
+  `df`: any Linux, BusyBox included (Alpine, OpenWrt, most NAS). Other systems
+  can turn them off and use custom sensors only.
+- Preferably a **user dedicated to Gladys** on each machine, without
+  administrator rights.
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+### Settings
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+- **Read interval**: how often each machine is read, one SSH connection per
+  machine and cycle (5 minutes by default).
+- **Read load, memory, disk and uptime**: turn off for machines without
+  `/proc`, or for a user restricted to a single forced command.
+- **Your own private key** (optional) and its **passphrase**: leave empty to
+  use the key of the integration (recommended). Otherwise paste an OpenSSH or
+  unencrypted PEM private key; the line breaks lost by the form are rebuilt.
+  Legacy encrypted PEM keys (`Proc-Type: 4,ENCRYPTED`) are not supported:
+  convert them with `ssh-keygen -p -f key`.
+- **Language of the feature names**: French by default; also English, German
+  and Spanish. It applies to devices created afterwards.
 
-## Actions
+### Authorizing the integration on a machine
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+1. Run **Show the public key**. At its first start, the integration generated
+   its own Ed25519 key, kept in its private volume; the private part never
+   leaves it.
+2. On the machine, create a dedicated user and authorize the key:
 
-## Scenes
+   ```sh
+   sudo adduser --disabled-password gladys
+   sudo -u gladys mkdir -p ~gladys/.ssh
+   echo 'no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAA… gladys-ssh' \
+     | sudo tee -a ~gladys/.ssh/authorized_keys
+   sudo chmod 700 ~gladys/.ssh && sudo chmod 600 ~gladys/.ssh/authorized_keys
+   sudo chown -R gladys: ~gladys/.ssh
+   ```
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+   The `no-…` options forbid tunnels and terminals to this key: it can only
+   run commands.
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+3. A command needs root? Allow **that command only** with sudo, for example
+   in `/etc/sudoers.d/gladys` (edit it with `sudo visudo -f /etc/sudoers.d/gladys`):
 
-## Dashboard
+   ```
+   gladys ALL=(root) NOPASSWD: /usr/bin/systemctl restart plex
+   ```
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+   Never give the user `ALL`.
+
+### Adding a host
+
+Run **Add or update a host** with a name, the IP address or host name, the
+port (22 if empty) and the user name. A password can replace the key: it is
+typed in clear in the form, kept in the integration's volume and never shown
+again; leave the field empty later to keep it.
+
+The integration connects at once and answers what happened. At the first
+connection it **remembers the host key** of the machine (its fingerprint,
+`SHA256:…`): compare it with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
+on the machine. From then on, a machine showing another host key is
+**refused** before any authentication. After a reinstallation, run **Accept a
+new host key**, then save the host again. Changing the address or the port of
+a host forgets its host key too.
+
+Then create the device in the **Discover** tab. Saving a host under the same
+name updates it and keeps its device.
+
+### Declaring commands
+
+Run **Add or update a command** with the host, a name, the command and its
+kind:
+
+- **Action**: run from a scene or a widget button only. It is never run when
+  saved.
+- **Sensor: a number**: read at every cycle; the first number of the output is
+  kept (`48250`, `temp=47,8'C` → 47.8): filter a verbose output with `awk` or
+  `cut` (`temp1: +45.0°C` would read 1). Choose its unit: percent, °C,
+  durations, sizes, rate, watts, volts, or none.
+- **Sensor: a text**: read at every cycle; the output on one line, 250
+  characters at most.
+
+A sensor is tried once when saved, and the answer shows its first value. Its
+feature appears on the device after **Update** in the Discover tab. **Button
+in the widget** adds a button to the widget of the host. The **time limit**
+(10 seconds if empty, 90 at most) stops a command that runs too long: it then
+counts as failed. Outputs are capped at 64 KB.
+
+The command is run as is by the user's shell, as `ssh user@host 'command'`
+would. **Show hosts and commands** lists everything; **Remove a command** and
+**Remove a host** clean up.
+
+Examples of commands:
+
+| Name         | Command                                                              | Kind           |
+| ------------ | -------------------------------------------------------------------- | -------------- |
+| CPU          | `cat /sys/class/thermal/thermal_zone0/temp \| awk '{print $1/1000}'` | number, °C     |
+| Updates      | `apt list --upgradable 2>/dev/null \| grep -c upgradable`            | number         |
+| Plex         | `systemctl is-active plex`                                           | text           |
+| Restart Plex | `sudo systemctl restart plex`                                        | action, button |
+| Backup       | `/home/gladys/backup.sh`                                             | action         |
+| Shut down    | `sudo /sbin/poweroff`                                                | action         |
+
+## Devices
+
+| Feature               | Content                                                 |
+| --------------------- | ------------------------------------------------------- |
+| Reachable             | 1 when the SSH session opens (address, host key, login) |
+| Load (1 min)          | load average over one minute                            |
+| Memory used           | memory in use, in % (available memory excluded)         |
+| Disk used (/)         | space used on the root file system, in %                |
+| Uptime                | in days                                                 |
+| one per custom sensor | its number or text                                      |
+
+A failed connection is tried again once, 5 seconds later, before the machine
+is shown unreachable: one lost packet changes nothing. Values are published
+only when they change, and at least every 12 hours. While a machine is
+unreachable its figures keep their last value.
+
+## Dashboard widget
+
+The **SSH host** widget shows one machine (the first one if none is chosen):
+its state — or why it is unreachable —, load, memory, disk, uptime and custom
+sensors, with up to four buttons for the commands marked _Button in the
+widget_. A button runs the command and shows its result (exit code, first
+line of the output) in a notification. An action asks for confirmation
+first (Gladys 5.2.0 or later).
+
+## Scene triggers
+
+- **A host became unreachable**: no answer or refused twice in a row, or at
+  once for a refused login or a changed host key.
+  Variables: host name, address, reason (`timeout`, `refused`, `unreachable`,
+  `dns`, `auth`, `host_key_changed`, `error`). Filter: the host.
+- **A host is reachable again**: variables host name, address, minutes
+  unreachable.
+- **A command failed**: a command run by a scene or the widget returned an
+  error code, ran over its time limit or could not run; a sensor fires once,
+  until it works again. Variables: host name, command name, exit code (-1: not
+  run or stopped), output. Filters: the host, the command name.
+
+These events carry what a feature state cannot: the reason, the duration, the
+output. A threshold on a figure (disk above 90 %…) is a regular scene on the
+device feature.
+
+## Scene action
+
+**Run an SSH command**: choose the host and give the name of a declared
+command. Outputs: _Succeeded_ (1 or 0), _Exit code_, _Output_ (1000 characters
+at most), to use in a "Continue only if" step or a message. A failed command
+does not stop the scene: test _Succeeded_. An unknown host or command does.
+
+## Scene examples
+
+- **Alert when the NAS is down**: trigger _A host became unreachable_ (NAS) →
+  send a message "NAS unreachable: {{triggerEvent.data.reason}}".
+- **Restart a stuck service**: every 15 minutes → _Run an SSH command_ "Check
+  Plex" (`systemctl is-active plex`, which fails when the service is down) →
+  continue only if _Succeeded_ is 0 → _Run an SSH command_ "Restart Plex" →
+  send its output.
+- **Nightly backup**: at 3:00 → _Run an SSH command_ "Backup" → send the exit
+  code; trigger _A command failed_ (Backup) for an alert.
+- **Everything off when leaving**: _Run an SSH command_ "Shut down" on the
+  media PC when the house is empty.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"authentication refused"**: the public key is not in
+  `~/.ssh/authorized_keys` of this user, or the rights are too open
+  (`chmod 700 ~/.ssh`, `chmod 600 ~/.ssh/authorized_keys`, owned by the user).
+  The server's log (`journalctl -u ssh`) says why.
+- **"the host key changed"**: the machine was reinstalled, or another machine
+  took its address. Check, then **Accept a new host key**.
+- **"no answer"**: address, port, firewall. mDNS names (`.local`) do not
+  resolve in the integration: use the IP address.
+- **The standard figures are empty**: the machine has no `/proc` or `df`, or
+  the key is restricted to one forced command (`command=` in
+  `authorized_keys`): turn them off and use custom sensors.
+- **A number sensor stays empty**: its command must exit with 0 and print a
+  number. Run it by hand with `ssh gladys@host 'command'`.
+- Logs: in Gladys, the container logs of the integration; `LOG_LEVEL=debug`
+  shows each cycle.
+
+## Limits
+
+- Linux and other POSIX systems; no Windows-specific figures (custom sensors
+  work if Windows OpenSSH runs a POSIX shell).
+- One password per host, typed in clear in the form: prefer the key.
+- 20 hosts, 15 commands per host, 4 buttons per widget.
+- A timeout sends a KILL signal (OpenSSH 7.9 or later) and closes the channel;
+  an older server may let the command finish on its own.
+- Scene parameters cannot be passed to a command, on purpose.
+- Not affiliated with OpenSSH or the OpenBSD project.

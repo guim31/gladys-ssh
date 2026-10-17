@@ -31,16 +31,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only (src/app.js registers the handlers before connect())
+src/app.js                        handlers → monitor; configuration actions answered, not thrown
+src/monitor.js                    hosts, read cycles, states, triggers, commands, configuration actions
+src/ssh.js                        one SSH session (ssh2): host key check, auth, commands with timeouts
+src/keys.js                       client key: generated under /data, or pasted and rebuilt
+src/metrics.js                    standard figures (/proc, df) and custom sensor parsing
+src/hosts.js                      validation of host and command fields, slug ids
+src/devices.js                    Gladys device of a host (features, unit → category/type)
+src/scenes.js                     scene action run_command
+src/widgets.js                    dashboard widget `host`
+src/texts.js                      every text sent from the container, en/fr/de/es
+src/store.js                      /data/state.json (atomic writes, mode 600)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (same sections)
+test/                             node --test: SDK fake Gladys, simulated machines, loopback ssh2 server
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, manifest texts, widget texts, feature names and
+  `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +240,41 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Intégration SSH (notes de développement, 17/10/2026)
+
+- **Sécurité, la règle qui fonde tout** : seules les commandes déclarées par « Ajouter ou modifier une
+  commande » s'exécutent. Scènes et widget ne font que **nommer** une commande (le champ `command` de
+  l'action de scène accepte des variables, mais il ne sert qu'à chercher parmi les déclarées) ; aucun
+  paramètre n'est jamais ajouté au texte. Le widget relit la commande dans la configuration (id + drapeau
+  `button`) avant de la lancer : des `params` forgés ne mènent à rien d'autre. Des tests le figent.
+- **Clé privée collée dans un champ** : un `secret` est un `<input>` d'une ligne, le navigateur **supprime
+  les retours à la ligne** au collage (assainissement HTML de la valeur). `src/keys.js` reconstruit
+  l'armure (70 colonnes OpenSSH, 64 PEM). Les PEM chiffrées à l'ancienne (`Proc-Type`/`DEK-Info`) ne
+  peuvent pas être reconstruites : la doc demande de les convertir. Par défaut l'intégration génère sa
+  propre clé Ed25519 dans `/data` : rien de secret ne transite par un formulaire.
+- **Mot de passe par hôte** : champ `string` d'action (un `secret` d'action est impossible à remplir,
+  #3154), donc visible à la saisie ; vide = garder l'actuel ; jamais réaffiché ni journalisé.
+- **TOFU** : l'empreinte (`SHA256:…`, format OpenSSH) est mémorisée au premier contact et vérifiée dans
+  `hostVerifier` d'ssh2, donc **avant** l'authentification. Changer adresse ou port oublie l'empreinte ;
+  sinon l'action « Accepter une nouvelle clé d'hôte ». Pas de second essai sur `host_key_changed` ni `auth`.
+- **ssh2** : l'ordre d'authentification par défaut essaie le mot de passe avant la clé ; on passe
+  `authHandler: ['publickey', 'password']`. `stream.signal('KILL')` au dépassement de délai (OpenSSH ≥ 7.9
+  pour une commande sans pty), puis `close()`, et un filet d'une seconde si le serveur ne confirme pas.
+- **Valeurs standard** : une seule commande à marqueurs (`LOAD`, `UPTIME`, meminfo, `DISK`), GNU et
+  BusyBox (fixtures réelles dans `test/fixtures/metrics`). Une clé limitée par `command=` casse cette
+  commande : la doc dit de désactiver les valeurs standard.
+- **Capteurs personnalisés** : couple choisi par l'unité (`SENSOR_SHAPES` dans `src/devices.js`), sans
+  unité `unknown/unknown`. Un nom égal à celui d'une fonctionnalité standard (quatre langues) est refusé :
+  deux fonctionnalités de même nom sur un appareil. Ajouter un capteur à un appareil créé demande
+  « Mettre à jour » dans Découverte.
+- Budget du widget relu dans le schéma du store : **4 boutons au plus** (pas 6), 1 `status` de 10 lignes.
+- Tests réseau : `test/ssh.test.js` monte un serveur ssh2 **dans le processus, sur 127.0.0.1** (boucle
+  locale) ; aucun test ne résout de nom ni ne sort de la machine.
+- **Connexion coupée en pleine session** (relu le 17/10) : ssh2 émet `close` du client avant de fermer
+  les canaux, et un `exec()` après la coupure lève « Not connected » de façon synchrone : sans garde, rejet
+  non capté et **processus arrêté**. `runSession` résout désormais la commande en cours et les suivantes
+  en `disconnected` (une commande `reboot` n'est pas un échec), avec une échéance globale de session et
+  des keepalives (5 s × 3) contre une connexion TCP à moitié morte.
+- Des noms différents qui donnent le même slug (« NAS 2 » / « NAS 2! ») sont refusés, jamais écrasés.
+  Un `state.json` illisible n'est jamais réécrit (mis de côté s'il est corrompu).

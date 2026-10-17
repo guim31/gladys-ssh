@@ -1,0 +1,8 @@
+LOAD 2.44 2.76 2.45 4/1981 2187108
+UPTIME 773145.26 2220214.87
+MemTotal:       16150116 kB
+MemFree:          390964 kB
+MemAvailable:    5781704 kB
+Buffers:          829880 kB
+Cached:          3057216 kB
+DISK /dev/sda2       490617784 379942420   85679884      82% /

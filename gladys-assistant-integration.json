@@ -1,177 +1,1149 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "SSH",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Watch your Linux machines over SSH and run the commands you declared from scenes.",
+    "fr": "Surveillez vos machines Linux par SSH et lancez depuis vos scènes les commandes déclarées.",
+    "de": "Überwache deine Linux-Rechner per SSH und starte festgelegte Befehle aus Szenen.",
+    "es": "Vigile sus máquinas Linux por SSH y ejecute desde sus escenas los comandos declarados."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-ssh:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-ssh/main/cover.png",
+  "categories": ["network"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your machines",
+        "fr": "Vos machines",
+        "de": "Deine Rechner",
+        "es": "Sus máquinas"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "1. \"Show the public key\": add it to ~/.ssh/authorized_keys of a dedicated user on each machine. 2. \"Add or update a host\", then create its device in the Discover tab. 3. \"Add or update a command\": only the declared commands ever run.",
+        "fr": "1. « Afficher la clé publique » : ajoutez-la à ~/.ssh/authorized_keys d'un utilisateur dédié sur chaque machine. 2. « Ajouter ou modifier un hôte », puis créez son appareil dans l'onglet Découverte. 3. « Ajouter ou modifier une commande » : seules les commandes déclarées sont lancées.",
+        "de": "1. „Öffentlichen Schlüssel anzeigen“: Füge ihn in ~/.ssh/authorized_keys eines eigenen Benutzers auf jedem Rechner ein. 2. „Host hinzufügen oder ändern“, dann sein Gerät im Tab „Entdecken“ anlegen. 3. „Befehl hinzufügen oder ändern“: Nur festgelegte Befehle laufen.",
+        "es": "1. «Mostrar la clave pública»: añádala a ~/.ssh/authorized_keys de un usuario dedicado en cada máquina. 2. «Añadir o modificar un equipo» y cree su dispositivo en la pestaña Descubrir. 3. «Añadir o modificar un comando»: solo se ejecutan los comandos declarados."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-ssh/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Installationsanleitung",
+            "es": "Guía de instalación"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Read interval",
+        "fr": "Intervalle de lecture",
+        "de": "Leseintervall",
+        "es": "Intervalo de lectura"
+      },
+      "description": {
+        "en": "How often each host is read (one SSH connection per host).",
+        "fr": "Fréquence de lecture de chaque hôte (une connexion SSH par hôte).",
+        "de": "Wie oft jeder Host gelesen wird (eine SSH-Verbindung pro Host).",
+        "es": "Con qué frecuencia se lee cada equipo (una conexión SSH por equipo)."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "5",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "1",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "2",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "5",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "10",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 minutes",
+            "fr": "30 minutes",
+            "de": "30 Minuten",
+            "es": "30 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "standard_metrics",
+      "type": "boolean",
+      "label": {
+        "en": "Read load, memory, disk and uptime",
+        "fr": "Lire charge, mémoire, disque et durée de fonctionnement",
+        "de": "Last, Speicher, Festplatte und Betriebszeit lesen",
+        "es": "Leer carga, memoria, disco y tiempo encendido"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Standard Linux figures (/proc and df). Turn off for machines without them, or for a user restricted to one command.",
+        "fr": "Valeurs Linux standard (/proc et df). Désactivez pour les machines qui ne les ont pas, ou pour un utilisateur limité à une commande.",
+        "de": "Linux-Standardwerte (/proc und df). Schalte sie für Rechner ohne diese aus oder für einen auf einen Befehl beschränkten Benutzer.",
+        "es": "Valores estándar de Linux (/proc y df). Desactívelo para máquinas que no los tienen o para un usuario limitado a un comando."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": true
+    },
+    {
+      "key": "private_key",
+      "type": "secret",
+      "label": {
+        "en": "Your own private key (optional)",
+        "fr": "Votre propre clé privée (facultative)",
+        "de": "Dein eigener privater Schlüssel (optional)",
+        "es": "Su propia clave privada (opcional)"
+      },
+      "description": {
+        "en": "Empty: the integration uses its own key, generated at the first start (recommended). Otherwise paste an OpenSSH or PEM private key.",
+        "fr": "Vide : l'intégration utilise sa propre clé, générée au premier démarrage (recommandé). Sinon, collez une clé privée OpenSSH ou PEM.",
+        "de": "Leer: Die Integration nutzt ihren eigenen, beim ersten Start erzeugten Schlüssel (empfohlen). Sonst füge einen privaten OpenSSH- oder PEM-Schlüssel ein.",
+        "es": "Vacío: la integración usa su propia clave, generada en el primer arranque (recomendado). Si no, pegue una clave privada OpenSSH o PEM."
+      },
+      "required": false
+    },
+    {
+      "key": "private_key_passphrase",
+      "type": "secret",
+      "label": {
+        "en": "Passphrase of your private key",
+        "fr": "Phrase de passe de votre clé privée",
+        "de": "Passphrase deines privaten Schlüssels",
+        "es": "Frase de contraseña de su clave privada"
+      },
+      "description": {
+        "en": "Only if your own private key is encrypted.",
+        "fr": "Seulement si votre propre clé privée est chiffrée.",
+        "de": "Nur wenn dein eigener privater Schlüssel verschlüsselt ist.",
+        "es": "Solo si su propia clave privada está cifrada."
+      },
+      "required": false
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de las funciones"
+      },
+      "description": {
+        "en": "Names given to the features of new devices (Reachable, Load…) and language of the widget and scene texts.",
+        "fr": "Noms donnés aux fonctionnalités des nouveaux appareils (Joignable, Charge…) et langue des textes du widget et des scènes.",
+        "de": "Namen der Funktionen neuer Geräte (Erreichbar, Last…) und Sprache der Widget- und Szenentexte.",
+        "es": "Nombres de las funciones de los nuevos dispositivos (Accesible, Carga…) e idioma de los textos del widget y las escenas."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "add_host",
+      "label": {
+        "en": "Add or update a host",
+        "fr": "Ajouter ou modifier un hôte",
+        "de": "Host hinzufügen oder ändern",
+        "es": "Añadir o modificar un equipo"
+      },
+      "description": {
+        "en": "Adds a machine, or updates the one with the same name, then connects once to check it and remember its host key.",
+        "fr": "Ajoute une machine, ou met à jour celle de même nom, puis s'y connecte une fois pour la vérifier et mémoriser sa clé d'hôte.",
+        "de": "Fügt einen Rechner hinzu oder aktualisiert den mit gleichem Namen und verbindet sich dann einmal, um ihn zu prüfen und seinen Host-Schlüssel zu merken.",
+        "es": "Añade una máquina, o actualiza la del mismo nombre, y se conecta una vez para comprobarla y memorizar su clave."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Name",
+            "fr": "Nom",
+            "de": "Name",
+            "es": "Nombre"
+          },
+          "placeholder": {
+            "en": "e.g. Home server",
+            "fr": "ex. Serveur maison",
+            "de": "z. B. Heimserver",
+            "es": "p. ej. Servidor de casa"
+          }
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "IP address or host name",
+            "fr": "Adresse IP ou nom d'hôte",
+            "de": "IP-Adresse oder Hostname",
+            "es": "Dirección IP o nombre de equipo"
+          },
+          "description": {
+            "en": "A fixed address works best. mDNS names (.local) do not resolve in the integration.",
+            "fr": "Une adresse fixe est préférable. Les noms mDNS (.local) ne sont pas résolus par l'intégration.",
+            "de": "Eine feste Adresse ist am besten. mDNS-Namen (.local) werden von der Integration nicht aufgelöst.",
+            "es": "Es mejor una dirección fija. Los nombres mDNS (.local) no se resuelven en la integración."
+          },
+          "placeholder": {
+            "en": "e.g. 192.168.1.10",
+            "fr": "ex. 192.168.1.10",
+            "de": "z. B. 192.168.1.10",
+            "es": "p. ej. 192.168.1.10"
+          }
+        },
+        {
+          "key": "port",
+          "type": "number",
+          "required": false,
+          "min": 1,
+          "max": 65535,
+          "label": {
+            "en": "SSH port",
+            "fr": "Port SSH",
+            "de": "SSH-Port",
+            "es": "Puerto SSH"
+          },
+          "description": {
+            "en": "Empty: 22.",
+            "fr": "Vide : 22.",
+            "de": "Leer: 22.",
+            "es": "Vacío: 22."
+          }
+        },
+        {
+          "key": "username",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "User name",
+            "fr": "Nom d'utilisateur",
+            "de": "Benutzername",
+            "es": "Nombre de usuario"
+          },
+          "description": {
+            "en": "Preferably a user dedicated to Gladys, without administrator rights.",
+            "fr": "De préférence un utilisateur dédié à Gladys, sans droits d'administration.",
+            "de": "Am besten ein eigener Benutzer für Gladys, ohne Administratorrechte.",
+            "es": "Preferiblemente un usuario dedicado a Gladys, sin derechos de administrador."
+          },
+          "placeholder": {
+            "en": "e.g. gladys",
+            "fr": "ex. gladys",
+            "de": "z. B. gladys",
+            "es": "p. ej. gladys"
+          }
+        },
+        {
+          "key": "password",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Password (if no key)",
+            "fr": "Mot de passe (sans clé)",
+            "de": "Passwort (ohne Schlüssel)",
+            "es": "Contraseña (sin clave)"
+          },
+          "description": {
+            "en": "Optional, the key is better. Shown while typed, kept in the integration's data, never shown again. Empty: keeps the saved one.",
+            "fr": "Facultatif, la clé est préférable. Visible à la saisie, gardé dans les données de l'intégration, jamais réaffiché. Vide : garde l'actuel.",
+            "de": "Optional, der Schlüssel ist besser. Bei der Eingabe sichtbar, in den Daten der Integration gespeichert, nie wieder angezeigt. Leer: behält das gespeicherte.",
+            "es": "Opcional, la clave es mejor. Visible al escribirla, guardada en los datos de la integración, nunca se vuelve a mostrar. Vacío: conserva la actual."
+          }
         }
       ]
+    },
+    {
+      "key": "remove_host",
+      "label": {
+        "en": "Remove a host",
+        "fr": "Retirer un hôte",
+        "de": "Host entfernen",
+        "es": "Quitar un equipo"
+      },
+      "description": {
+        "en": "Removes a machine and its commands. Its device, if created, stays in Gladys until you delete it.",
+        "fr": "Retire une machine et ses commandes. Son appareil, s'il a été créé, reste dans Gladys jusqu'à ce que vous le supprimiez.",
+        "de": "Entfernt einen Rechner und seine Befehle. Sein Gerät bleibt, falls angelegt, in Gladys, bis du es löschst.",
+        "es": "Quita una máquina y sus comandos. Su dispositivo, si se creó, permanece en Gladys hasta que lo elimine."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "host",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          },
+          "placeholder": {
+            "en": "e.g. Home server",
+            "fr": "ex. Serveur maison",
+            "de": "z. B. Heimserver",
+            "es": "p. ej. Servidor de casa"
+          }
+        }
+      ]
+    },
+    {
+      "key": "add_command",
+      "label": {
+        "en": "Add or update a command",
+        "fr": "Ajouter ou modifier une commande",
+        "de": "Befehl hinzufügen oder ändern",
+        "es": "Añadir o modificar un comando"
+      },
+      "description": {
+        "en": "Declares a command of a host, or updates the one with the same name. A sensor is tried once; an action is never run here.",
+        "fr": "Déclare une commande d'un hôte, ou met à jour celle de même nom. Un capteur est essayé une fois ; une action n'est jamais lancée ici.",
+        "de": "Legt einen Befehl eines Hosts fest oder aktualisiert den mit gleichem Namen. Ein Sensor wird einmal probiert; eine Aktion wird hier nie gestartet.",
+        "es": "Declara un comando de un equipo, o actualiza el del mismo nombre. Un sensor se prueba una vez; una acción nunca se ejecuta aquí."
+      },
+      "timeout_seconds": 120,
+      "fields": [
+        {
+          "key": "host",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          },
+          "placeholder": {
+            "en": "e.g. Home server",
+            "fr": "ex. Serveur maison",
+            "de": "z. B. Heimserver",
+            "es": "p. ej. Servidor de casa"
+          }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Command name",
+            "fr": "Nom de la commande",
+            "de": "Name des Befehls",
+            "es": "Nombre del comando"
+          },
+          "description": {
+            "en": "Also the name of the feature for a sensor, and of the widget button.",
+            "fr": "C'est aussi le nom de la fonctionnalité d'un capteur, et du bouton du widget.",
+            "de": "Auch der Name der Funktion eines Sensors und der Widget-Schaltfläche.",
+            "es": "También es el nombre de la función de un sensor y del botón del widget."
+          },
+          "placeholder": {
+            "en": "e.g. CPU temperature",
+            "fr": "ex. Température CPU",
+            "de": "z. B. CPU-Temperatur",
+            "es": "p. ej. Temperatura CPU"
+          }
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Command",
+            "fr": "Commande",
+            "de": "Befehl",
+            "es": "Comando"
+          },
+          "description": {
+            "en": "Run as is by the user's shell. Use sudo only with a sudoers rule limited to this command.",
+            "fr": "Lancée telle quelle par le shell de l'utilisateur. N'utilisez sudo qu'avec une règle sudoers limitée à cette commande.",
+            "de": "Wird unverändert von der Shell des Benutzers ausgeführt. Nutze sudo nur mit einer auf diesen Befehl beschränkten sudoers-Regel.",
+            "es": "Se ejecuta tal cual en el shell del usuario. Use sudo solo con una regla sudoers limitada a este comando."
+          },
+          "placeholder": {
+            "en": "e.g. cat /sys/class/thermal/thermal_zone0/temp",
+            "fr": "ex. cat /sys/class/thermal/thermal_zone0/temp",
+            "de": "z. B. cat /sys/class/thermal/thermal_zone0/temp",
+            "es": "p. ej. cat /sys/class/thermal/thermal_zone0/temp"
+          }
+        },
+        {
+          "key": "kind",
+          "type": "select",
+          "required": true,
+          "label": {
+            "en": "Kind",
+            "fr": "Type",
+            "de": "Art",
+            "es": "Tipo"
+          },
+          "options": [
+            {
+              "value": "action",
+              "label": {
+                "en": "Action (run from a scene or the widget)",
+                "fr": "Action (lancée par une scène ou le widget)",
+                "de": "Aktion (aus einer Szene oder dem Widget)",
+                "es": "Acción (desde una escena o el widget)"
+              }
+            },
+            {
+              "value": "number",
+              "label": {
+                "en": "Sensor: a number",
+                "fr": "Capteur : un nombre",
+                "de": "Sensor: eine Zahl",
+                "es": "Sensor: un número"
+              }
+            },
+            {
+              "value": "text",
+              "label": {
+                "en": "Sensor: a text",
+                "fr": "Capteur : un texte",
+                "de": "Sensor: ein Text",
+                "es": "Sensor: un texto"
+              }
+            }
+          ]
+        },
+        {
+          "key": "unit",
+          "type": "select",
+          "required": false,
+          "label": {
+            "en": "Unit (number sensor)",
+            "fr": "Unité (capteur nombre)",
+            "de": "Einheit (Zahlensensor)",
+            "es": "Unidad (sensor numérico)"
+          },
+          "description": {
+            "en": "Empty: no unit. The first number of the output is read (42.5, 42,5).",
+            "fr": "Vide : sans unité. Le premier nombre de la sortie est lu (42.5, 42,5).",
+            "de": "Leer: ohne Einheit. Die erste Zahl der Ausgabe wird gelesen (42.5, 42,5).",
+            "es": "Vacío: sin unidad. Se lee el primer número de la salida (42.5, 42,5)."
+          },
+          "options": [
+            {
+              "value": "percent",
+              "label": {
+                "en": "Percent (%)",
+                "fr": "Pourcentage (%)",
+                "de": "Prozent (%)",
+                "es": "Porcentaje (%)"
+              }
+            },
+            {
+              "value": "celsius",
+              "label": {
+                "en": "Degrees Celsius (°C)",
+                "fr": "Degrés Celsius (°C)",
+                "de": "Grad Celsius (°C)",
+                "es": "Grados Celsius (°C)"
+              }
+            },
+            {
+              "value": "seconds",
+              "label": {
+                "en": "Seconds",
+                "fr": "Secondes",
+                "de": "Sekunden",
+                "es": "Segundos"
+              }
+            },
+            {
+              "value": "minutes",
+              "label": {
+                "en": "Minutes",
+                "fr": "Minutes",
+                "de": "Minuten",
+                "es": "Minutos"
+              }
+            },
+            {
+              "value": "hours",
+              "label": {
+                "en": "Hours",
+                "fr": "Heures",
+                "de": "Stunden",
+                "es": "Horas"
+              }
+            },
+            {
+              "value": "days",
+              "label": {
+                "en": "Days",
+                "fr": "Jours",
+                "de": "Tage",
+                "es": "Días"
+              }
+            },
+            {
+              "value": "megabyte",
+              "label": {
+                "en": "Megabytes (MB)",
+                "fr": "Mégaoctets (Mo)",
+                "de": "Megabyte (MB)",
+                "es": "Megabytes (MB)"
+              }
+            },
+            {
+              "value": "gigabyte",
+              "label": {
+                "en": "Gigabytes (GB)",
+                "fr": "Gigaoctets (Go)",
+                "de": "Gigabyte (GB)",
+                "es": "Gigabytes (GB)"
+              }
+            },
+            {
+              "value": "megabits-per-second",
+              "label": {
+                "en": "Megabits per second",
+                "fr": "Mégabits par seconde",
+                "de": "Megabit pro Sekunde",
+                "es": "Megabits por segundo"
+              }
+            },
+            {
+              "value": "watt",
+              "label": {
+                "en": "Watts (W)",
+                "fr": "Watts (W)",
+                "de": "Watt (W)",
+                "es": "Vatios (W)"
+              }
+            },
+            {
+              "value": "volt",
+              "label": {
+                "en": "Volts (V)",
+                "fr": "Volts (V)",
+                "de": "Volt (V)",
+                "es": "Voltios (V)"
+              }
+            }
+          ]
+        },
+        {
+          "key": "button",
+          "type": "boolean",
+          "required": false,
+          "label": {
+            "en": "Button in the widget",
+            "fr": "Bouton dans le widget",
+            "de": "Schaltfläche im Widget",
+            "es": "Botón en el widget"
+          },
+          "description": {
+            "en": "The widget of the host gets a button that runs this command (4 at most).",
+            "fr": "Le widget de l'hôte reçoit un bouton qui lance cette commande (4 au plus).",
+            "de": "Das Widget des Hosts bekommt eine Schaltfläche, die diesen Befehl startet (höchstens 4).",
+            "es": "El widget del equipo recibe un botón que ejecuta este comando (4 como máximo)."
+          }
+        },
+        {
+          "key": "timeout",
+          "type": "select",
+          "required": false,
+          "label": {
+            "en": "Time limit",
+            "fr": "Délai maximal",
+            "de": "Zeitlimit",
+            "es": "Tiempo máximo"
+          },
+          "description": {
+            "en": "Empty: 10 seconds. Beyond it the command is stopped and counts as failed.",
+            "fr": "Vide : 10 secondes. Au-delà, la commande est arrêtée et compte comme un échec.",
+            "de": "Leer: 10 Sekunden. Danach wird der Befehl gestoppt und gilt als fehlgeschlagen.",
+            "es": "Vacío: 10 segundos. Después, el comando se detiene y cuenta como fallido."
+          },
+          "options": [
+            {
+              "value": "5",
+              "label": {
+                "en": "5 seconds",
+                "fr": "5 secondes",
+                "de": "5 Sekunden",
+                "es": "5 segundos"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10 seconds",
+                "fr": "10 secondes",
+                "de": "10 Sekunden",
+                "es": "10 segundos"
+              }
+            },
+            {
+              "value": "30",
+              "label": {
+                "en": "30 seconds",
+                "fr": "30 secondes",
+                "de": "30 Sekunden",
+                "es": "30 segundos"
+              }
+            },
+            {
+              "value": "60",
+              "label": {
+                "en": "1 minute",
+                "fr": "1 minute",
+                "de": "1 Minute",
+                "es": "1 minuto"
+              }
+            },
+            {
+              "value": "90",
+              "label": {
+                "en": "90 seconds",
+                "fr": "90 secondes",
+                "de": "90 Sekunden",
+                "es": "90 segundos"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "remove_command",
+      "label": {
+        "en": "Remove a command",
+        "fr": "Retirer une commande",
+        "de": "Befehl entfernen",
+        "es": "Quitar un comando"
+      },
+      "description": {
+        "en": "Removes a declared command. The feature of a sensor stays on the device until you update it in the Discover tab.",
+        "fr": "Retire une commande déclarée. La fonctionnalité d'un capteur reste sur l'appareil jusqu'à sa mise à jour dans l'onglet Découverte.",
+        "de": "Entfernt einen festgelegten Befehl. Die Funktion eines Sensors bleibt am Gerät, bis du es im Tab „Entdecken“ aktualisierst.",
+        "es": "Quita un comando declarado. La función de un sensor permanece en el dispositivo hasta que lo actualice en la pestaña Descubrir."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "host",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          },
+          "placeholder": {
+            "en": "e.g. Home server",
+            "fr": "ex. Serveur maison",
+            "de": "z. B. Heimserver",
+            "es": "p. ej. Servidor de casa"
+          }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Command name",
+            "fr": "Nom de la commande",
+            "de": "Name des Befehls",
+            "es": "Nombre del comando"
+          }
+        }
+      ]
+    },
+    {
+      "key": "forget_host_key",
+      "label": {
+        "en": "Accept a new host key",
+        "fr": "Accepter une nouvelle clé d'hôte",
+        "de": "Neuen Host-Schlüssel akzeptieren",
+        "es": "Aceptar una nueva clave del equipo"
+      },
+      "description": {
+        "en": "After a reinstallation only: forgets the remembered host key, the next connection remembers the new one.",
+        "fr": "Après une réinstallation seulement : oublie la clé d'hôte mémorisée, la prochaine connexion mémorise la nouvelle.",
+        "de": "Nur nach einer Neuinstallation: Vergisst den gemerkten Host-Schlüssel, die nächste Verbindung merkt sich den neuen.",
+        "es": "Solo tras una reinstalación: olvida la clave memorizada, la próxima conexión memoriza la nueva."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "host",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          },
+          "placeholder": {
+            "en": "e.g. Home server",
+            "fr": "ex. Serveur maison",
+            "de": "z. B. Heimserver",
+            "es": "p. ej. Servidor de casa"
+          }
+        }
+      ]
+    },
+    {
+      "key": "show_public_key",
+      "label": {
+        "en": "Show the public key",
+        "fr": "Afficher la clé publique",
+        "de": "Öffentlichen Schlüssel anzeigen",
+        "es": "Mostrar la clave pública"
+      },
+      "description": {
+        "en": "The line to add to ~/.ssh/authorized_keys on each machine.",
+        "fr": "La ligne à ajouter à ~/.ssh/authorized_keys sur chaque machine.",
+        "de": "Die Zeile, die auf jedem Rechner in ~/.ssh/authorized_keys gehört.",
+        "es": "La línea que hay que añadir a ~/.ssh/authorized_keys en cada máquina."
+      },
+      "timeout_seconds": 10
+    },
+    {
+      "key": "list_hosts",
+      "label": {
+        "en": "Show hosts and commands",
+        "fr": "Afficher les hôtes et les commandes",
+        "de": "Hosts und Befehle anzeigen",
+        "es": "Mostrar equipos y comandos"
+      },
+      "description": {
+        "en": "Lists the declared machines, their state and their commands.",
+        "fr": "Liste les machines déclarées, leur état et leurs commandes.",
+        "de": "Listet die festgelegten Rechner, ihren Zustand und ihre Befehle auf.",
+        "es": "Enumera las máquinas declaradas, su estado y sus comandos."
+      },
+      "timeout_seconds": 10
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "host_unreachable",
+      "label": {
+        "en": "A host became unreachable",
+        "fr": "Un hôte est devenu injoignable",
+        "de": "Ein Host ist nicht mehr erreichbar",
+        "es": "Un equipo ha dejado de estar accesible"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "The SSH connection failed: no answer or refused twice in a row, or at once for a refused login or a changed host key.",
+        "fr": "La connexion SSH a échoué : pas de réponse ou refus deux fois de suite, ou aussitôt pour une connexion refusée ou une clé d'hôte changée.",
+        "de": "Die SSH-Verbindung ist gescheitert: zweimal hintereinander keine Antwort oder abgelehnt, oder sofort bei abgelehnter Anmeldung oder geändertem Host-Schlüssel.",
+        "es": "La conexión SSH ha fallado: sin respuesta o rechazada dos veces seguidas, o enseguida si se rechaza el acceso o cambia la clave del equipo."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          }
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "label": {
+            "en": "Address",
+            "fr": "Adresse",
+            "de": "Adresse",
+            "es": "Dirección"
+          }
+        },
+        {
+          "key": "reason",
+          "type": "string",
+          "label": {
+            "en": "Reason (timeout, refused, auth…)",
+            "fr": "Raison (timeout, refused, auth…)",
+            "de": "Grund (timeout, refused, auth…)",
+            "es": "Motivo (timeout, refused, auth…)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "host_back",
+      "label": {
+        "en": "A host is reachable again",
+        "fr": "Un hôte est de nouveau joignable",
+        "de": "Ein Host ist wieder erreichbar",
+        "es": "Un equipo vuelve a estar accesible"
+      },
+      "description": {
+        "en": "An unreachable host answers again over SSH.",
+        "fr": "Un hôte injoignable répond de nouveau en SSH.",
+        "de": "Ein nicht erreichbarer Host antwortet wieder per SSH.",
+        "es": "Un equipo inaccesible vuelve a responder por SSH."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          }
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "label": {
+            "en": "Address",
+            "fr": "Adresse",
+            "de": "Adresse",
+            "es": "Dirección"
+          }
+        },
+        {
+          "key": "down_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes unreachable",
+            "fr": "Minutes d'indisponibilité",
+            "de": "Minuten nicht erreichbar",
+            "es": "Minutos inaccesible"
+          }
+        }
+      ]
+    },
+    {
+      "key": "command_failed",
+      "label": {
+        "en": "A command failed",
+        "fr": "Une commande a échoué",
+        "de": "Ein Befehl ist fehlgeschlagen",
+        "es": "Un comando ha fallado"
+      },
+      "description": {
+        "en": "A declared command returned an error code, ran over its time limit or could not run. For a sensor: once, until it works again.",
+        "fr": "Une commande déclarée a renvoyé un code d'erreur, dépassé son délai ou n'a pas pu être lancée. Pour un capteur : une fois, jusqu'à ce qu'il remarche.",
+        "de": "Ein festgelegter Befehl hat einen Fehlercode geliefert, sein Zeitlimit überschritten oder konnte nicht starten. Bei einem Sensor: einmal, bis er wieder funktioniert.",
+        "es": "Un comando declarado ha devuelto un código de error, ha superado su tiempo máximo o no se ha podido ejecutar. Para un sensor: una vez, hasta que vuelva a funcionar."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          }
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "label": {
+            "en": "Command name",
+            "fr": "Nom de la commande",
+            "de": "Name des Befehls",
+            "es": "Nombre del comando"
+          },
+          "description": {
+            "en": "Empty: any command.",
+            "fr": "Vide : n'importe quelle commande.",
+            "de": "Leer: jeder Befehl.",
+            "es": "Vacío: cualquier comando."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Host name",
+            "fr": "Nom de l'hôte",
+            "de": "Name des Hosts",
+            "es": "Nombre del equipo"
+          }
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "label": {
+            "en": "Command name",
+            "fr": "Nom de la commande",
+            "de": "Name des Befehls",
+            "es": "Nombre del comando"
+          }
+        },
+        {
+          "key": "exit_code",
+          "type": "number",
+          "label": {
+            "en": "Exit code (-1: not run or stopped)",
+            "fr": "Code de retour (-1 : non lancée ou arrêtée)",
+            "de": "Rückgabewert (-1: nicht gestartet oder gestoppt)",
+            "es": "Código de salida (-1: no ejecutado o detenido)"
+          }
+        },
+        {
+          "key": "output",
+          "type": "string",
+          "label": {
+            "en": "Output",
+            "fr": "Sortie",
+            "de": "Ausgabe",
+            "es": "Salida"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "run_command",
+      "label": {
+        "en": "Run an SSH command",
+        "fr": "Lancer une commande SSH",
+        "de": "SSH-Befehl ausführen",
+        "es": "Ejecutar un comando SSH"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Runs a command declared for the host, and gives its result to the next steps.",
+        "fr": "Lance une commande déclarée pour l'hôte, et donne son résultat aux étapes suivantes.",
+        "de": "Führt einen für den Host festgelegten Befehl aus und gibt sein Ergebnis an die nächsten Schritte weiter.",
+        "es": "Ejecuta un comando declarado para el equipo y pasa su resultado a los pasos siguientes."
+      },
+      "timeout_seconds": 120,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
           "required": true
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Command name",
+            "fr": "Nom de la commande",
+            "de": "Name des Befehls",
+            "es": "Nombre del comando"
+          },
+          "description": {
+            "en": "The name given in the configuration (\"Show hosts and commands\").",
+            "fr": "Le nom donné dans la configuration (« Afficher les hôtes et les commandes »).",
+            "de": "Der in der Konfiguration vergebene Name („Hosts und Befehle anzeigen“).",
+            "es": "El nombre dado en la configuración («Mostrar equipos y comandos»)."
+          },
+          "placeholder": {
+            "en": "e.g. Restart Plex",
+            "fr": "ex. Redémarrer Plex",
+            "de": "z. B. Plex neu starten",
+            "es": "p. ej. Reiniciar Plex"
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "success",
+          "type": "number",
+          "label": {
+            "en": "Succeeded (1 = yes, 0 = no)",
+            "fr": "Réussie (1 = oui, 0 = non)",
+            "de": "Erfolgreich (1 = ja, 0 = nein)",
+            "es": "Correcto (1 = sí, 0 = no)"
+          }
+        },
+        {
+          "key": "exit_code",
+          "type": "number",
+          "label": {
+            "en": "Exit code",
+            "fr": "Code de retour",
+            "de": "Rückgabewert",
+            "es": "Código de salida"
+          }
+        },
+        {
+          "key": "output",
+          "type": "string",
+          "label": {
+            "en": "Output",
+            "fr": "Sortie",
+            "de": "Ausgabe",
+            "es": "Salida"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "host",
+      "label": {
+        "en": "SSH host",
+        "fr": "Hôte SSH",
+        "de": "SSH-Host",
+        "es": "Equipo SSH"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "State, load, memory, disk and sensors of a machine, with your command buttons.",
+        "fr": "État, charge, mémoire, disque et capteurs d'une machine, avec vos boutons de commande.",
+        "de": "Zustand, Last, Speicher, Festplatte und Sensoren eines Rechners, mit deinen Befehlsschaltflächen.",
+        "es": "Estado, carga, memoria, disco y sensores de una máquina, con sus botones de comando."
+      },
+      "icon": "terminal",
+      "action_timeout_seconds": 120,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
+          "description": {
+            "en": "Empty: the first host.",
+            "fr": "Vide : le premier hôte.",
+            "de": "Leer: der erste Host.",
+            "es": "Vacío: el primer equipo."
+          }
+        }
+      ]
     }
   ]
 }
