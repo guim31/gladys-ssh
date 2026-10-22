@@ -134,6 +134,10 @@ ferait `ssh utilisateur@hôte 'commande'`. **Afficher les hôtes et les
 commandes** liste tout ; **Retirer une commande** et **Retirer un hôte** font
 le ménage.
 
+Dans ces actions et dans **Accepter une nouvelle clé d'hôte**, **Hôte** liste
+les hôtes dont l'appareil a été créé dans l'onglet Découverte. Pour un hôte pas
+encore créé, laissez-le vide et saisissez son nom dans **Ou le nom de l'hôte**.
+
 Exemples de commandes :
 
 | Nom             | Commande                                                             | Type           |
@@ -195,6 +199,11 @@ déclarée. Sorties : _Réussie_ (1 ou 0), _Code de retour_, _Sortie_ (1000
 caractères au plus), pour une étape « Continuer seulement si » ou un message.
 Une commande en échec n'arrête pas la scène : testez _Réussie_. Un hôte ou une
 commande inconnus, si.
+
+Le nom de la commande se saisit : Gladys propose des listes d'appareils, pas de
+commandes. Majuscules et accents ne comptent pas, et **Afficher les hôtes et
+les commandes** donne les noms. Pour une commande lancée d'un geste, un bouton
+du widget est plus simple.
 
 ## Exemples de scènes
 

@@ -115,6 +115,11 @@ export const ERRORS = {
     username: 'Enter the user name to log in with.',
     tooManyHosts: ({ max }) => `The list is full (${max} hosts).`,
     unknownHost: ({ value }) => `No host is named "${value}".`,
+    hostMissing: 'Choose the host in the list, or type its name.',
+    hostConflict: ({ listed, typed }) =>
+      `The list says ${listed} but the name says ${typed}: keep only one.`,
+    deviceUnlinked:
+      'This device is no longer linked to a host: add the host again, or remove the device in Gladys.',
     commandName: 'Give the command a name.',
     command: 'Enter the command to run.',
     commandLength: ({ max }) => `The command is too long (${max} characters at most).`,
@@ -135,6 +140,11 @@ export const ERRORS = {
     username: "Saisissez le nom d'utilisateur de connexion.",
     tooManyHosts: ({ max }) => `La liste est pleine (${max} hôtes).`,
     unknownHost: ({ value }) => `Aucun hôte ne s'appelle « ${value} ».`,
+    hostMissing: "Choisissez l'hôte dans la liste, ou saisissez son nom.",
+    hostConflict: ({ listed, typed }) =>
+      `La liste indique ${listed} mais le nom indique ${typed} : n'en gardez qu'un.`,
+    deviceUnlinked:
+      "Cet appareil n'est plus lié à un hôte : ajoutez de nouveau l'hôte, ou supprimez l'appareil dans Gladys.",
     commandName: 'Donnez un nom à la commande.',
     command: 'Saisissez la commande à lancer.',
     commandLength: ({ max }) => `La commande est trop longue (${max} caractères au plus).`,
@@ -156,6 +166,11 @@ export const ERRORS = {
     username: 'Gib den Benutzernamen für die Anmeldung ein.',
     tooManyHosts: ({ max }) => `Die Liste ist voll (${max} Hosts).`,
     unknownHost: ({ value }) => `Kein Host heißt „${value}“.`,
+    hostMissing: 'Wähle den Host in der Liste oder gib seinen Namen ein.',
+    hostConflict: ({ listed, typed }) =>
+      `Die Liste nennt ${listed}, der Name aber ${typed}: Behalte nur eines.`,
+    deviceUnlinked:
+      'Dieses Gerät ist mit keinem Host mehr verbunden: Füge den Host erneut hinzu oder lösche das Gerät in Gladys.',
     commandName: 'Gib dem Befehl einen Namen.',
     command: 'Gib den auszuführenden Befehl ein.',
     commandLength: ({ max }) => `Der Befehl ist zu lang (höchstens ${max} Zeichen).`,
@@ -177,6 +192,11 @@ export const ERRORS = {
     username: 'Introduzca el nombre de usuario para conectarse.',
     tooManyHosts: ({ max }) => `La lista está llena (${max} equipos).`,
     unknownHost: ({ value }) => `Ningún equipo se llama «${value}».`,
+    hostMissing: 'Elija el equipo en la lista o escriba su nombre.',
+    hostConflict: ({ listed, typed }) =>
+      `La lista indica ${listed} pero el nombre indica ${typed}: conserve solo uno.`,
+    deviceUnlinked:
+      'Este dispositivo ya no está vinculado a un equipo: vuelva a añadir el equipo o elimine el dispositivo en Gladys.',
     commandName: 'Dé un nombre al comando.',
     command: 'Introduzca el comando que se ejecutará.',
     commandLength: ({ max }) => `El comando es demasiado largo (${max} caracteres como máximo).`,

@@ -10,6 +10,14 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- The host of **Add or update a command**, **Remove a command**, **Remove a
+  host** and **Accept a new host key** is chosen in a list of the hosts created
+  in Gladys. A host not created yet is typed in the new **Or the host name**
+  field; a name in the host field is still accepted. A host chosen in the list
+  and a different one typed is refused, never guessed.
+
 ## [1.0.0] - 2026-10-17
 
 ### Added
