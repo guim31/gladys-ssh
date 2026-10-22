@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-22
+
 ### Changed
 
 - The host of **Add or update a command**, **Remove a command**, **Remove a
@@ -40,5 +42,6 @@ the notes of the version's GitHub Release.
   everything, and accept a new host key after a reinstallation.
 - Texts and documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-ssh/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/guim31/gladys-ssh/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/guim31/gladys-ssh/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/guim31/gladys-ssh/releases/tag/v1.0.0
