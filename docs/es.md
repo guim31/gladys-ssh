@@ -131,6 +131,11 @@ El comando se ejecuta tal cual en el shell del usuario, como haría
 `ssh usuario@equipo 'comando'`. **Mostrar equipos y comandos** lo enumera
 todo; **Quitar un comando** y **Quitar un equipo** hacen limpieza.
 
+En estas acciones y en **Aceptar una nueva clave del equipo**, **Equipo**
+muestra los equipos cuyo dispositivo se creó en la pestaña Descubrir. Para un
+equipo aún no creado, déjelo vacío y escriba su nombre en **O el nombre del
+equipo**.
+
 Ejemplos de comandos:
 
 | Nombre             | Comando                                                              | Tipo          |
@@ -193,6 +198,11 @@ declarado. Salidas: _Correcto_ (1 o 0), _Código de salida_, _Salida_ (1000
 caracteres como máximo), para un paso «Continuar solo si» o un mensaje. Un
 comando fallido no detiene la escena: compruebe _Correcto_. Un equipo o un
 comando desconocidos, sí.
+
+El nombre del comando se escribe: Gladys ofrece listas de dispositivos, no de
+comandos. Mayúsculas y acentos no importan, y **Mostrar equipos y comandos**
+da los nombres. Para un comando lanzado con un toque, un botón del widget es
+más sencillo.
 
 ## Ejemplos de escenas
 

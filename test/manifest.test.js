@@ -62,6 +62,29 @@ test('Gladys 5.1.0 at least: widgets, scene triggers and actions', () => {
   assert.ok(major > 5 || (major === 5 && minor >= 1), manifest.gladys_version);
 });
 
+test('the host of an action is a list of the devices, with a typed name as fallback', () => {
+  const withHost = manifest.actions.filter((entry) => keysOf(entry.fields).includes('host'));
+  assert.deepEqual(keysOf(withHost).sort(), [
+    'add_command',
+    'forget_host_key',
+    'remove_command',
+    'remove_host',
+  ]);
+  for (const entry of withHost) {
+    const keys = keysOf(entry.fields);
+    const host = entry.fields.find((field) => field.key === 'host');
+    const name = entry.fields.find((field) => field.key === 'host_name');
+    // The core accepts only a created device in the list: neither is
+    // required, so a host not created yet can still be typed.
+    assert.equal(host.type, 'select', entry.key);
+    assert.equal(host.source, 'devices', entry.key);
+    assert.equal(host.required, false, entry.key);
+    assert.equal(name?.type, 'string', entry.key);
+    assert.equal(name.required, false, entry.key);
+    assert.equal(keys.indexOf('host_name'), keys.indexOf('host') + 1, entry.key);
+  }
+});
+
 test('every manifest action has a handler, and vice versa', () => {
   assert.deepEqual(keysOf(manifest.actions).sort(), handlerKeys('action:').sort());
 });

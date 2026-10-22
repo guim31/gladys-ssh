@@ -162,6 +162,10 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Un champ `secret` dans les `fields` d'une **action** est impossible à remplir, et une action
   n'applique **aucun `default`** tout en exigeant les champs `required` (422). Issues
   GladysAssistant/Gladys#3154 et #3155.
+- Un `select` `source: "devices"` est permis dans les `fields` d'une action (5.1.4 et plus), mais
+  le cœur valide la valeur contre les appareils **créés** (422 sinon) : impossible d'y saisir un
+  nom. Ici, `host` (liste, non requis) est doublé de `host_name` (texte) pour un hôte pas encore
+  créé. Le front envoie `""` si l'utilisateur revient à l'option vide d'un select : 422 aussi.
 
 **SDK 0.15 et journaux**
 

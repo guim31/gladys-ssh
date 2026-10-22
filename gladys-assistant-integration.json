@@ -361,13 +361,37 @@
       "fields": [
         {
           "key": "host",
-          "type": "string",
-          "required": true,
+          "type": "select",
+          "source": "devices",
+          "required": false,
           "label": {
-            "en": "Host name",
-            "fr": "Nom de l'hôte",
-            "de": "Name des Hosts",
-            "es": "Nombre del equipo"
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
+          "description": {
+            "en": "Lists the hosts whose device was created in the Discover tab. Not listed yet? Leave it empty and type the name below.",
+            "fr": "Liste les hôtes dont l'appareil a été créé dans l'onglet Découverte. Pas encore listé ? Laissez vide et saisissez son nom ci-dessous.",
+            "de": "Zeigt die Hosts, deren Gerät im Tab „Entdecken“ angelegt wurde. Noch nicht dabei? Leer lassen und den Namen unten eingeben.",
+            "es": "Muestra los equipos cuyo dispositivo se creó en la pestaña Descubrir. ¿Aún no aparece? Déjelo vacío y escriba su nombre abajo."
+          }
+        },
+        {
+          "key": "host_name",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Or the host name",
+            "fr": "Ou le nom de l'hôte",
+            "de": "Oder der Name des Hosts",
+            "es": "O el nombre del equipo"
+          },
+          "description": {
+            "en": "Only for a host whose device is not created in Gladys.",
+            "fr": "Seulement pour un hôte dont l'appareil n'est pas créé dans Gladys.",
+            "de": "Nur für einen Host, dessen Gerät nicht in Gladys angelegt ist.",
+            "es": "Solo para un equipo cuyo dispositivo no está creado en Gladys."
           },
           "placeholder": {
             "en": "e.g. Home server",
@@ -396,13 +420,37 @@
       "fields": [
         {
           "key": "host",
-          "type": "string",
-          "required": true,
+          "type": "select",
+          "source": "devices",
+          "required": false,
           "label": {
-            "en": "Host name",
-            "fr": "Nom de l'hôte",
-            "de": "Name des Hosts",
-            "es": "Nombre del equipo"
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
+          "description": {
+            "en": "Lists the hosts whose device was created in the Discover tab. Not listed yet? Leave it empty and type the name below.",
+            "fr": "Liste les hôtes dont l'appareil a été créé dans l'onglet Découverte. Pas encore listé ? Laissez vide et saisissez son nom ci-dessous.",
+            "de": "Zeigt die Hosts, deren Gerät im Tab „Entdecken“ angelegt wurde. Noch nicht dabei? Leer lassen und den Namen unten eingeben.",
+            "es": "Muestra los equipos cuyo dispositivo se creó en la pestaña Descubrir. ¿Aún no aparece? Déjelo vacío y escriba su nombre abajo."
+          }
+        },
+        {
+          "key": "host_name",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Or the host name",
+            "fr": "Ou le nom de l'hôte",
+            "de": "Oder der Name des Hosts",
+            "es": "O el nombre del equipo"
+          },
+          "description": {
+            "en": "Only for a host whose device is not created in Gladys.",
+            "fr": "Seulement pour un hôte dont l'appareil n'est pas créé dans Gladys.",
+            "de": "Nur für einen Host, dessen Gerät nicht in Gladys angelegt ist.",
+            "es": "Solo para un equipo cuyo dispositivo no está creado en Gladys."
           },
           "placeholder": {
             "en": "e.g. Home server",
@@ -716,13 +764,37 @@
       "fields": [
         {
           "key": "host",
-          "type": "string",
-          "required": true,
+          "type": "select",
+          "source": "devices",
+          "required": false,
           "label": {
-            "en": "Host name",
-            "fr": "Nom de l'hôte",
-            "de": "Name des Hosts",
-            "es": "Nombre del equipo"
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
+          "description": {
+            "en": "Lists the hosts whose device was created in the Discover tab. Not listed yet? Leave it empty and type the name below.",
+            "fr": "Liste les hôtes dont l'appareil a été créé dans l'onglet Découverte. Pas encore listé ? Laissez vide et saisissez son nom ci-dessous.",
+            "de": "Zeigt die Hosts, deren Gerät im Tab „Entdecken“ angelegt wurde. Noch nicht dabei? Leer lassen und den Namen unten eingeben.",
+            "es": "Muestra los equipos cuyo dispositivo se creó en la pestaña Descubrir. ¿Aún no aparece? Déjelo vacío y escriba su nombre abajo."
+          }
+        },
+        {
+          "key": "host_name",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Or the host name",
+            "fr": "Ou le nom de l'hôte",
+            "de": "Oder der Name des Hosts",
+            "es": "O el nombre del equipo"
+          },
+          "description": {
+            "en": "Only for a host whose device is not created in Gladys.",
+            "fr": "Seulement pour un hôte dont l'appareil n'est pas créé dans Gladys.",
+            "de": "Nur für einen Host, dessen Gerät nicht in Gladys angelegt ist.",
+            "es": "Solo para un equipo cuyo dispositivo no está creado en Gladys."
           },
           "placeholder": {
             "en": "e.g. Home server",
@@ -762,13 +834,37 @@
       "fields": [
         {
           "key": "host",
-          "type": "string",
-          "required": true,
+          "type": "select",
+          "source": "devices",
+          "required": false,
           "label": {
-            "en": "Host name",
-            "fr": "Nom de l'hôte",
-            "de": "Name des Hosts",
-            "es": "Nombre del equipo"
+            "en": "Host",
+            "fr": "Hôte",
+            "de": "Host",
+            "es": "Equipo"
+          },
+          "description": {
+            "en": "Lists the hosts whose device was created in the Discover tab. Not listed yet? Leave it empty and type the name below.",
+            "fr": "Liste les hôtes dont l'appareil a été créé dans l'onglet Découverte. Pas encore listé ? Laissez vide et saisissez son nom ci-dessous.",
+            "de": "Zeigt die Hosts, deren Gerät im Tab „Entdecken“ angelegt wurde. Noch nicht dabei? Leer lassen und den Namen unten eingeben.",
+            "es": "Muestra los equipos cuyo dispositivo se creó en la pestaña Descubrir. ¿Aún no aparece? Déjelo vacío y escriba su nombre abajo."
+          }
+        },
+        {
+          "key": "host_name",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Or the host name",
+            "fr": "Ou le nom de l'hôte",
+            "de": "Oder der Name des Hosts",
+            "es": "O el nombre del equipo"
+          },
+          "description": {
+            "en": "Only for a host whose device is not created in Gladys.",
+            "fr": "Seulement pour un hôte dont l'appareil n'est pas créé dans Gladys.",
+            "de": "Nur für einen Host, dessen Gerät nicht in Gladys angelegt ist.",
+            "es": "Solo para un equipo cuyo dispositivo no está creado en Gladys."
           },
           "placeholder": {
             "en": "e.g. Home server",

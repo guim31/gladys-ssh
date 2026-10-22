@@ -308,6 +308,44 @@ test('removing a command and a host', async (t) => {
   assert.deepEqual(world.fake.discoveredDevices, []);
 });
 
+test('the host of an action: device of the list, typed name, or the old free text', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const device = await homeServer(world);
+  const host = device.external_id;
+  const added = await action(world, 'add_command', {
+    host,
+    name: 'V',
+    command: 'uname -r',
+    kind: 'text',
+  });
+  assert.match(message(added), /Home server/);
+  assert.ok(featureId(discovered(world, 'Home server'), 'cmd-v'));
+  // A host whose device is not created yet is typed in host_name.
+  await action(world, 'add_command', {
+    host_name: ' home SERVER ',
+    name: 'W',
+    command: 'uptime',
+    kind: 'text',
+  });
+  assert.ok(featureId(discovered(world, 'Home server'), 'cmd-w'));
+  // The list wins over a typed name.
+  const removed = await action(world, 'remove_command', { host, host_name: 'Nope', name: 'w' });
+  assert.match(message(removed), /Home server/);
+  assert.equal(featureId(discovered(world, 'Home server'), 'cmd-w'), undefined);
+  const forgot = await action(world, 'forget_host_key', { host });
+  assert.match(message(forgot), /Home server/);
+  for (const fields of [{}, { host: '', host_name: '  ' }]) {
+    const ack = await action(world, 'remove_host', fields);
+    assert.match(message(ack), /Choose the host in the list, or type its name/);
+    assert.equal(Object.keys(ack.data.message).length, 4);
+  }
+  const gone = await action(world, 'remove_host', { host });
+  assert.match(message(gone), /Home server removed/);
+  const again = await action(world, 'remove_host', { host });
+  assert.match(message(again), /No host is named/);
+});
+
 test('the public key action shows the line to authorize, never the private key', async (t) => {
   const world = await createWorld();
   t.after(() => world.app.stop());

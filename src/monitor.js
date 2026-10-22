@@ -676,7 +676,7 @@ export class Monitor {
   }
 
   async removeHost(fields) {
-    const host = this.requireHost(fields.host);
+    const host = this.requireHost(fields);
     this.hosts.delete(host.id);
     this.status.delete(host.id);
     await this.save();
@@ -686,8 +686,20 @@ export class Monitor {
     return say(REPORTS, 'hostRemoved', { name: host.name });
   }
 
-  requireHost(value) {
-    const host = findHost(this.hosts, value);
+  /**
+   * The host of a configuration action. The `host` select gives the external
+   * id of a device (it lists only the hosts created in Gladys), `host_name`
+   * the name of a host whose device is not created yet; a name in `host` is
+   * still accepted (the free text field of 1.0.0, a direct API call).
+   */
+  requireHost(fields = {}) {
+    const trimmed = (value) => (typeof value === 'string' ? value.trim() : '');
+    const value = trimmed(fields.host) || trimmed(fields.host_name);
+    if (!value) {
+      throw new UserError('hostMissing');
+    }
+    const id = hostIdOf(this.gladys, value);
+    const host = id ? this.hosts.get(id) : findHost(this.hosts, value);
     if (!host) {
       throw new UserError('unknownHost', { value: String(value ?? '') });
     }
@@ -703,7 +715,7 @@ export class Monitor {
   }
 
   async addCommand(fields) {
-    const host = this.requireHost(fields.host);
+    const host = this.requireHost(fields);
     const command = parseCommandFields(fields);
     const index = host.commands.findIndex((entry) => entry.id === command.id);
     if (index !== -1 && host.commands[index].name.toLowerCase() !== command.name.toLowerCase()) {
@@ -765,7 +777,7 @@ export class Monitor {
   }
 
   async removeCommand(fields) {
-    const host = this.requireHost(fields.host);
+    const host = this.requireHost(fields);
     const command = this.requireCommand(host, fields.name);
     host.commands = host.commands.filter((entry) => entry.id !== command.id);
     this.statusOf(host).sensors.delete(command.id);
@@ -777,7 +789,7 @@ export class Monitor {
   }
 
   async forgetHostKey(fields) {
-    const host = this.requireHost(fields.host);
+    const host = this.requireHost(fields);
     host.fingerprint = null;
     await this.save();
     logger.info(`Host key of ${host.name} forgotten`);

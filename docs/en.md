@@ -124,6 +124,10 @@ The command is run as is by the user's shell, as `ssh user@host 'command'`
 would. **Show hosts and commands** lists everything; **Remove a command** and
 **Remove a host** clean up.
 
+In these actions and in **Accept a new host key**, **Host** lists the hosts
+whose device was created in the Discover tab. For a host not created yet,
+leave it empty and type its name in **Or the host name**.
+
 Examples of commands:
 
 | Name         | Command                                                              | Kind           |
@@ -183,6 +187,10 @@ device feature.
 command. Outputs: _Succeeded_ (1 or 0), _Exit code_, _Output_ (1000 characters
 at most), to use in a "Continue only if" step or a message. A failed command
 does not stop the scene: test _Succeeded_. An unknown host or command does.
+
+The command name is typed: Gladys offers lists of devices, not of commands.
+Upper case and accents do not matter, and **Show hosts and commands** gives the
+names. A command meant for one tap is simpler as a widget button.
 
 ## Scene examples
 

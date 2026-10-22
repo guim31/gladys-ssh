@@ -133,6 +133,11 @@ Der Befehl wird unverändert von der Shell des Benutzers ausgeführt, wie bei
 `ssh benutzer@host 'befehl'`. **Hosts und Befehle anzeigen** listet alles auf;
 **Befehl entfernen** und **Host entfernen** räumen auf.
 
+In diesen Aktionen und in **Neuen Host-Schlüssel akzeptieren** listet **Host**
+die Hosts, deren Gerät im Tab „Entdecken“ angelegt wurde. Für einen noch nicht
+angelegten Host lass es leer und gib seinen Namen in **Oder der Name des
+Hosts** ein.
+
 Beispiele für Befehle:
 
 | Name             | Befehl                                                               | Art                  |
@@ -198,6 +203,11 @@ Befehls an. Ausgaben: _Erfolgreich_ (1 oder 0), _Rückgabewert_, _Ausgabe_
 (höchstens 1000 Zeichen), für einen Schritt „Nur fortfahren, wenn“ oder eine
 Nachricht. Ein fehlgeschlagener Befehl stoppt die Szene nicht: Prüfe
 _Erfolgreich_. Ein unbekannter Host oder Befehl schon.
+
+Der Name des Befehls wird eingetippt: Gladys bietet Listen von Geräten an,
+nicht von Befehlen. Groß- und Kleinschreibung und Akzente zählen nicht, und
+**Hosts und Befehle anzeigen** nennt die Namen. Für einen Befehl auf
+Knopfdruck ist eine Widget-Schaltfläche einfacher.
 
 ## Szenen-Beispiele
 
