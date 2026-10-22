@@ -694,14 +694,34 @@ export class Monitor {
    */
   requireHost(fields = {}) {
     const trimmed = (value) => (typeof value === 'string' ? value.trim() : '');
-    const value = trimmed(fields.host) || trimmed(fields.host_name);
-    if (!value) {
+    const listed = trimmed(fields.host);
+    const typed = trimmed(fields.host_name);
+    if (!listed && !typed) {
       throw new UserError('hostMissing');
     }
+    const fromList = listed ? this.resolveHost(listed) : null;
+    const fromName = typed ? this.resolveHost(typed) : null;
+    // Both filled and different: removing or re-keying the wrong machine
+    // would be silent, so neither wins.
+    if (fromList && fromName && fromList !== fromName) {
+      throw new UserError('hostConflict', { listed: fromList.name, typed: fromName.name });
+    }
+    return fromList ?? fromName;
+  }
+
+  /** A device external id (the list) or a host name (typed, or the 1.0.0 free text). */
+  resolveHost(value) {
     const id = hostIdOf(this.gladys, value);
-    const host = id ? this.hosts.get(id) : findHost(this.hosts, value);
+    if (id) {
+      const host = this.hosts.get(id);
+      if (!host) {
+        throw new UserError('deviceUnlinked');
+      }
+      return host;
+    }
+    const host = findHost(this.hosts, value);
     if (!host) {
-      throw new UserError('unknownHost', { value: String(value ?? '') });
+      throw new UserError('unknownHost', { value });
     }
     return host;
   }

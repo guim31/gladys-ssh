@@ -329,8 +329,12 @@ test('the host of an action: device of the list, typed name, or the old free tex
     kind: 'text',
   });
   assert.ok(featureId(discovered(world, 'Home server'), 'cmd-w'));
-  // The list wins over a typed name.
-  const removed = await action(world, 'remove_command', { host, host_name: 'Nope', name: 'w' });
+  // Both filled with the same host is fine.
+  const removed = await action(world, 'remove_command', {
+    host,
+    host_name: 'home server',
+    name: 'w',
+  });
   assert.match(message(removed), /Home server/);
   assert.equal(featureId(discovered(world, 'Home server'), 'cmd-w'), undefined);
   const forgot = await action(world, 'forget_host_key', { host });
@@ -343,7 +347,29 @@ test('the host of an action: device of the list, typed name, or the old free tex
   const gone = await action(world, 'remove_host', { host });
   assert.match(message(gone), /Home server removed/);
   const again = await action(world, 'remove_host', { host });
-  assert.match(message(again), /No host is named/);
+  assert.match(message(again), /This device is no longer linked to a host/);
+  assert.doesNotMatch(message(again), new RegExp(host));
+  assert.equal(Object.keys(again.data.message).length, 4);
+});
+
+test('a host chosen in the list and another one typed: nothing is done', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const device = await homeServer(world);
+  await action(world, 'add_host', { ...HOME_SERVER, name: 'Backup box' });
+  const fields = { host: device.external_id, host_name: 'Backup box' };
+  for (const key of ['remove_host', 'forget_host_key']) {
+    const ack = await action(world, key, fields);
+    assert.match(message(ack), /The list says Home server but the name says Backup box/, key);
+    assert.equal(Object.keys(ack.data.message).length, 4);
+  }
+  const unknown = await action(world, 'remove_host', {
+    host: device.external_id,
+    host_name: 'Nope',
+  });
+  assert.match(message(unknown), /No host is named "Nope"/);
+  assert.equal(world.monitor.hosts.size, 2);
+  assert.ok(world.monitor.hosts.get('home-server').fingerprint);
 });
 
 test('the public key action shows the line to authorize, never the private key', async (t) => {
